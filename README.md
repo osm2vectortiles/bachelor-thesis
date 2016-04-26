@@ -1,2 +1,12 @@
-# bachelor-thesis
-Bachelor thesis
+## Bachelor Thesis
+
+This repository contains the bachelor thesis of osm2vectortiles. [PDF Build](https://www.sharelatex.com/project/56cc1d3d63b23d6c0a2c7776/output/output.pdf)
+
+
+### License / Credits
+
+All content is licensed as [CC BY-SA 3.0 Unported.](http://creativecommons.org/licenses/by-sa/3.0/)
+
+The documentation style is based on the work by André Miede (downloaded from
+http://www.latextemplates.com/template/masters-doctoral-thesis) and licensed as
+[CC BY-NC-SA 3.0 Unported.](http://creativecommons.org/licenses/by-nc-sa/3.0/)
