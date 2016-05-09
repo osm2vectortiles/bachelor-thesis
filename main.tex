@@ -1,0 +1,117 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Classicthesis Typographic Thesis
+% LaTeX Template
+% Version 1.1 (4/8/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% André Miede (http://www.miede.de)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+% General Tips:
+% 1) Make sure to edit the classicthesis-config.file
+% 2) New enumeration (A., B., C., etc in small caps): \begin{aenumerate} \end{aenumerate}
+% 3) For margin notes: \marginpar or \graffito{}
+% 4) Do not use bold fonts in this style, it is designed around them
+% 5) Use tables as in the examples
+% 6) See classicthesis-preamble.sty for useful commands
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%------------------------------------------------
+
+\documentclass[
+	titlepage,numbers=noenddot,headinclude,%1headlines,
+    footinclude=true,cleardoublepage=empty,
+    BCOR=5mm,paper=a4,fontsize=11pt, % Binding correction, paper type and font size
+    english, % Languages
+]{scrreprt} 
+                
+% Includes the file which contains all the document configurations and packages - make sure to edit this file
+\input{classicthesis-config}
+\begin{document}
+
+\frenchspacing % Reduces space after periods to make text more compact
+
+\raggedbottom % Makes all pages the height of the text on that page
+
+\selectlanguage{american} % Select your default language - e.g. american or ngerman
+
+%\renewcommand*{\bibname}{new name} % Uncomment to change the name of the bibliography
+%\setbibpreamble{} % Uncomment to include a preamble to the bibliography - some text before the reference list starts
+
+\pagenumbering{roman} % Roman page numbering prior to the start of the thesis content (i, ii, iii, etc)
+
+\pagestyle{plain} % Suppress headers for the pre-content pages
+
+%-------------------------------------------------
+%	PRE-CONTENT THESIS PAGES
+%-------------------------------------------------
+%\includepdf[pages={1}]{images/hsr_titlepage.pdf}
+\include{front_back_matter/titlepage}
+\include{front_back_matter/titleback}
+
+
+\include{front_back_matter/abstract}
+\include{front_back_matter/management_summary}
+\include{front_back_matter/acknowledgments}
+
+\pagestyle{scrheadings} % Show chapter titles as headings
+
+\include{front_back_matter/contents} % Contents, list of figures/tables/listings and acronyms
+
+\pagenumbering{arabic} % Arabic page numbering for thesis content (1, 2, 3, etc)
+
+%------------------------------------------------
+%	THESIS CONTENT - CHAPTERS
+%------------------------------------------------
+\newpage
+\part{Technical Report}
+\include{chapters/technical_report/introduction}
+\include{chapters/technical_report/background}
+\include{chapters/technical_report/theorie}
+\include{chapters/technical_report/mapbox_streetsv7_implementation}
+\include{chapters/technical_report/scalable_rendering_process}
+
+%\include{chapters/technical_report/state_of_technology}
+%\include{chapters/technical_report/implementation_concept}
+%\include{chapters/technical_report/results_and_future}
+
+%------------------------------------------------
+\newpage
+\part{Project Documentation}
+\include{chapters/project_documentation/vision}\newpage
+\include{chapters/project_documentation/requirements_specification}\newpage
+\include{chapters/project_documentation/analysis}\newpage
+\include{chapters/project_documentation/evaluation}\newpage
+\include{chapters/project_documentation/implementation}\newpage
+\include{chapters/project_documentation/results_future_development}\newpage
+\include{chapters/project_documentation/project_management}\newpage
+\include{chapters/project_documentation/project_monitoring}\newpage
+
+%------------------------------------------------
+%	THESIS CONTENT - APPENDICES
+%------------------------------------------------
+\newpage
+\appendix
+\part{Appendix}
+\include{chapters/software_documentation/user_documentation}
+\include{chapters/software_documentation/developer_documentation}
+%\includepdf[pages={1}]{images/project_proposal.pdf}
+%\include{front_back_matter/meetings}\newpage
+
+%---------------------------------------
+%	POST-CONTENT THESIS PAGES
+%---------------------------------------
+\include{front_back_matter/bibliography}
+\newpage
+\include{front_back_matter/declaration}
+%---------------------------------------
+
+\end{document}

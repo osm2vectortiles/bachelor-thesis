@@ -1,0 +1,165 @@
+\chapter{Project Management}\label{project-management}
+
+\section{Software Development Process}
+
+
+An agile approach based on SCRUM has been used as the process model of this project.
+The maintainers of this project act as joint product owners while the backlog is managed not only
+by the product owners but also by the community which adds features to the wish list.\\
+
+At the beginning of each sprint features of the back log are estimated and scheduled for the
+next release. After each sprint (two weeks) a new stable version is released. \\
+
+In comparison to SCRUM there are no sprint reviews and retroperspective but regular meetings with
+the thesis advisor to inform about project status are conducted. Regular meetings with the technical advisor help to solve problems together.
+
+\subsection{GitHub}\label{github}
+GitHub was used for planning and tracking of the tasks and milestones.
+To provide a SCRUM board and burndown chart the ZenHub browser plugin has been used.
+
+
+It has a big advantage over other project management tools, as the revision control and the issue tracking is at the same place.
+Non project members can understand the thoughts behind certain decisions and communicate their ideas directly to team members which is important for an Open Source project.\\
+
+An organization named osm2vectortiles has been created with the following repositories:
+
+\begin{itemize}
+\item
+  \textbf{osm2vectortiles} contains the project
+\item
+  \textbf{imposm3} Custom fork of imposm3 to support timestamp field
+\end{itemize}
+
+\section{Schedule}
+
+Because the project members where already familiar with the technologies and field of work
+no elaboration phase or sprint was needed. After a long KickOff meeting the regular two week
+sprints started.
+
+\section{Sprints}
+
+Sprints
+
+Each milestones marks a special release version of the vector tiles.
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{p{2.5cm} p{10cm}}
+    v1.1 &  Evaluate how to implement OSM diff updates\\ \hline
+    v1.2 &  \\ \hline
+    v1.3 &  \\ \hline
+    v1.4 &  \\ \hline
+    v1.5 &  \\ \hline
+    v1.6 &  \\ \hline
+    \end{tabular}
+    \caption[Milestones]{Project sprints}
+\end{table}
+
+\section{Roles and Responsibilities}\label{roles-and-responsibilities}
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{p{3cm} p{9.5cm}}
+Prof Stefan Keller & Thesis advisor responsible for supervising work and
+assess the thesis.\\ \hline
+Dr Petr Pridal &
+Technical partner responsible for providing infrastructure and guidance in technical and map related questions.\\ \hline
+Manuel Roth &
+Maintainer\\ \hline
+Lukas Martinelli &
+Maintainer\\ \hline
+    \end{tabular}
+    \caption{Thesis contributors and their roles}
+\end{table}
+
+\section{Risks}\label{risks}
+
+In contrast to the preceding study thesis the bachelor thesis is less risky due
+to the increased knowledge of the field.
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{p{5.5cm} p{6.5cm} p{1.8cm}}
+    \hline
+    Risk & Measurement & Probability (1-6)\\
+    \hline
+    Infrastructure not sufficient & Switch to non school infrastructure and rely on external sponsors & 3\\
+    Rendering updates takes too long & Early measurements & 3\\
+    Unwanted Features & Open roadmap and feedback of community & 3\\
+    Quality not sufficient & Invest sufficient time in perfecting the quality & 3\\
+    \end{tabular}
+    \caption{Risks and measurements}
+\end{table}
+
+%---------------------------------------------------------------
+\newpage
+\chapter{Quality Measures}\label{quality-measures}
+
+\section{Testing}\label{testing}
+
+The osm2vectortiles ecosystem is quite diverse with a big collection of small tools that all work together which makes testing really complex.
+
+\section{Integration Test}
+
+In Travis CI\cite{pm_5_travis-ci.org_2015}  the entire workflow was completed for a small data sample on each commit.
+Because the entire workflow is configured with Docker Compose \cite{pm_6_docs.docker.com_2015} the CI server had to execute all import steps in serial order. This is a straightforward way to check if all components work together correctly
+and although it is a simple setup it has helped tremendously during project development, catching bugs
+like missing tables or SQL typos.
+
+\begin{yamlcode}
+script:
+  - docker-compose up -d postgis
+  - docker-compose up -d pgbouncer
+  - docker-compose run import-osm
+  - docker-compose run import-natural-earth
+  - docker-compose run import-water
+  - docker-compose run import-labels
+  - docker-compose run import-sql
+  - docker-compose run update-scaleranks
+  - docker-compose run export-local
+  - docker-compose up -d serve
+  - curl "http://localhost:8080/index.json"
+\end{yamlcode}
+
+\section{Guidelines}\label{guidelines}
+To have homogeneous software the contributors have settled on common guidelines in the beginning of the project.
+
+\subsection{Releases}
+Semantic versioning \cite{pm_7_preston-werner_2015} should be used for releases.
+At the end of each milestone a new release will be created.
+\newpage
+
+\subsection{Git}\label{git}
+\paragraph{Commit Messages}
+The seven rules of great git commit
+messages\cite{pm_8_chris.beams.io_2015} should be used.
+
+\paragraph{Rewriting}
+Git history should be kept clean and therefore local branches should be
+squashed meaningfully.
+
+\paragraph{Pulling}
+To avoid unnecessary merge messages one should always use the
+\texttt{-\/-rebase} parameter.
+
+\subsection{Workflow}\label{git-workflow}
+The Feature Branch Workflow\cite{pm_9_atlassian_git_tutorial_2015} should be used. Every project member has a local repository with a copy of the remote
+repository. For each feature ticket in GitHub a separate branch
+will be created. Once a ticket has been completed a pull request will be
+created and needs to be merged into the \texttt{master} branch by an other 
+
+\subsection{Coding Standards}
+
+\paragraph{Bash} Bash was used for the Docker image entrypoints and follow
+the rules of Defensive Bash Programming \cite{pm_10_lavi_2012}.
+
+\paragraph{Python} Python code should stay PEP-8\cite{pm_11_python.org_2015} compliant and write idiomatic Python code according to PEP-20\cite{pm_12_python.org_2015}.
+
+\paragraph{JavaScript} The JavaScript code is checked using ESLint\cite{pm_13_eslint.org_2015}
+
+\paragraph{SQL} The PostgreSQL code is using upper case for the key words. Apart from nice formatted SQL code and functions should be used
+to keep the queries DRY\cite{pm_14_wikipedia_2015}.
+
+\paragraph{Dockerfile} Dockerfiles follow the best practices\cite{pm_15_docs.docker.com_2015} defined by Docker.
+
+%---------------------------------------------------------------

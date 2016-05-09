@@ -1,0 +1,33 @@
+\chapter{Requirements Specification}\label{requirements_specification}
+
+This chapter describes the requirements for the vector tiles and the vector tile server.
+
+\section{User Characteristics}\label{user_characteristics}
+
+There are three user groups interested in this project.
+We can reference the actual personas from GitHub.
+
+\section{User Stories}\label{user_stories}
+
+\section{Non Functional Requirements}\label{non_functional_requirements}
+
+The non functional requirements are the key to success of this project. If the following requirements can be fulfilled, the specified users will be able to benefit form our project.
+
+\paragraph{Performance}
+
+The entire initial rendering process for the entire world must be kept below two weeks. The import on the master server should take less than a day while rendering should be kept below two weeks.
+Updates should happen in a weekly interval.
+
+\paragraph{Price}
+
+The cloud instances to render the world once costs around 1500 dollar. The updating should only cost a fraction of this initial investment.
+
+\paragraph{Compatibility}
+
+Compatibility with Mapbox Streets gives the users access
+to a wide range of styles and editors. Therefore the vector tiles must contain
+all features sets Mapbox Streets contains.
+
+\paragraph{Vector Tile Size}
+
+The size of a single vector tile should not be greater than 500 KB.

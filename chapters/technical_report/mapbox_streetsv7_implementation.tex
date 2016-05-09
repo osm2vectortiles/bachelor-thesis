@@ -1,0 +1,55 @@
+\chapter{Implementation of Mapbox Streets v7 }
+
+The main requirement regarding the content of the vector tiles is to be compatible with the vector tiles of Mapbox. This allows people to seamlessly switch to OSM2VectorTiles and use the same visual styles created in Mapbox Studio. Mapbox provides a detailed documentation on what data is included in the Mapbox Streets vector tiles. This documentation was used as a reference to implement the vector tiles definition.
+
+\section{Approach}
+
+The documentation of Mapbox Streets contains a detailed layer reference. For each layer the used attributes and values are listed. However the documentation lacks an important information. It doesn't contain the information on which zoom level a layer or attribute is shown. This information was retrieved by analyzing vector tiles on different zoom levels.\\\\
+All of this information was used to define the vector tiles in the so called source project. The source project contains an entry for each layer and a data source which can be a shapefile, a geojson file or a database. 
+
+\section{Implementation}
+
+The information described above was used to decide which OpenStreetMap data needs to be imported and to define each layers with its attributes. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{images/osm_to_vectortiles_detailed}
+\caption{Simplified process of data import to vector tile rendering}
+\end{figure}
+
+The figure above shows a simplified version of the entire process from data import to vector tile rendering. 
+
+\subsection{Import Mapping}
+
+Imposm3 is used to import the OSM data into the Postgres database. Imposm3 expects a definition of which OSM tags should be mapped to which database tables. \\\\
+The following definition maps OSM tags with the key \textbf{aeroway} and one of the values \textbf{runway}, \textbf{taxiway}, \textbf{apron} or \textbf{helipad} to the table \textbf{aero\_polygon}. The \textbf{aero\_polygon} table has the columns id, geometry, timestamp and type. Imposm3 combines the OSM nodes, way and relation to one of point, linestring or polygon.
+
+\begin{yamlcode}
+aero_polygon:
+  fields:
+  - name: id
+    type: id
+  - name: geometry
+    type: geometry
+  - name: timestamp
+    type: pbf_timestamp
+  - name: type
+    type: mapping_value
+  mapping:
+    aeroway:
+    - runway
+    - taxiway
+    - apron
+    - helipad
+  type: polygon
+\end{yamlcode}
+
+We decided to have a database table per layer inside the vector tiles. A table contains only geometries of the same type(one of point, linestring or polygon). If a layer contains geometries of more than one type, a separate tables for each type is created.
+
+For example the layer airport_label has a table airport_point and airport_polygon because in OSM the airport name can either be tagged on the polygon o   
+
+
+\subsection{Zoom level views}
+
+
+\subsection{Source Project}

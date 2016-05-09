@@ -1,0 +1,260 @@
+\chapter{Technology Evaluation}\label{technology_evaluation}
+
+
+\section{Detect Dirty Tiles}\label{detect_dirty_tiles}
+
+\begin{tcolorbox}[arc=0mm,boxrule=1pt,title=Note]
+We can move this to an other chapter since it is not really a technology
+but an approach evaluation.
+\end{tcolorbox}
+
+To know which tiles are affected by updates there are two main approaches.
+
+\subsection{Search Affected Tiles}
+
+The data style defines which geometries appears in which layers and zoom levels and 
+therefore is the source of truth whether a geometry appears in a certain tile.
+
+One approach is therefore to take the queries from the datastyle and modify
+them to cover large areas to search for affected tiles.
+
+The SQL query for the layer \texttt{bridge} for example defines which 
+OSM geometries appear in the bridge layer for zoom levels \texttt{12}, \texttt{13}, and \texttt{14}.
+
+\begin{sqlcode}
+SELECT osm_id, geometry, classify_road(type) AS class, type, layer, oneway, timestamp
+FROM osm_roads
+WHERE z(!scale_denominator!) >= 12 
+AND geometry && !bbox! 
+AND is_bridge
+ORDER BY layer ASC
+\end{sqlcode}
+
+This query can be automatically converted into a query that checks whether something has changed.
+The \texttt{z(!scale\_denominator!)} placeholder can be replaced with the zoom level
+we want to check for changed tiles (e.g. \texttt{13}).
+The \texttt{!bbox!} placeholder must be replaced with the bounding box where we want to search
+for changed tiles. To find the tiles that have changed a Depth First Search can be constructed
+that starts at the upper zoom levels and goes down to the zoom levels where tiles have changed.
+
+\begin{sqlcode}
+
+SELECT EXISTS(
+    SELECT osm_id, geometry, classify_road(type) AS class, type, layer, oneway, timestamp
+    FROM osm_roads
+    WHERE 13 >= 12 
+    AND geometry && !bbox! 
+    AND is_bridge
+    ORDER BY layer ASC
+) WHERE timestamp > now()
+
+\end{sqlcode}
+
+This approach has the great advantage that is generic and can work for any data style.
+Not just ours. It is however not very performant and perhaps not much faster than rerendering
+the world.
+
+\subsection{Calculate Affected Tiles}
+
+Instead of searching for affected tiles they can be calculated directly.
+Given a changed geometry it is possible to calculate the minimum number of tiles
+needed to cover that geometry for a given zoom level.
+
+\begin{tcolorbox}[arc=0mm,boxrule=1pt,title=Decision]\label{dirty_tiles_decision}
+We decided to use this approach accepting blabla
+\end{tcolorbox}
+
+\section{Keep Code DRY with Zoom Level Views}
+Another idea how to write the "what features are displayed on what zoom" level only once and not in the queries and the dirty tiles logic.
+
+We can create views for each zoom level and the layer is a UNION ALL query across all zoom level views.
+
+We now refactored the tm2source project to pull the data together from zoom level specific views. This has the benefit that we don't need to duplicate logic in order to query the dirty tiles.
+
+For detecting the dirty tiles we are no longer using tile cover since the SQL scripts works so well. We use a dynamic SQL function \texttt{detect\_dirty\_tiles} that you can pass a timestamp and view to get back the dirty tile indizes.
+
+\begin{sqlcode}
+SELECT osm_id, geometry, classify_landuse(type) as class, type
+FROM (
+  SELECT * FROM landuse_z5 WHERE z(!scale_denominator!) = 5
+  UNION ALL
+  SELECT * FROM landuse_z5 WHERE z(!scale_denominator!) = 6
+  UNION ALL
+  SELECT * FROM landuse_z7 WHERE z(!scale_denominator!) = 7
+  UNION ALL
+  SELECT * FROM landuse_z8 WHERE z(!scale_denominator!) = 8
+  UNION ALL
+  SELECT * FROM landuse_z9 WHERE z(!scale_denominator!) = 9
+  UNION ALL
+  SELECT * FROM landuse_z10 WHERE z(!scale_denominator!) = 10
+  UNION ALL
+  SELECT * FROM landuse_z11 WHERE z(!scale_denominator!) = 11
+  UNION ALL
+  SELECT * FROM landuse_z12 WHERE z(!scale_denominator!) = 12
+  UNION ALL
+  SELECT * FROM landuse_z13-z22 WHERE z(!scale_denominator!) >= 13
+) AS landusages
+WHERE geometry && !bbox!
+\end{sqlcode}
+
+Let's look at the distinct views.
+
+\begin{sqlcode}
+CREATE OR REPLACE VIEW landuse_z5 AS
+    SELECT *
+    FROM osm_landusages_gen0
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 300000000;
+
+CREATE OR REPLACE VIEW landuse_z6 AS
+    SELECT *
+    FROM osm_landusages_gen0
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 100000000;
+
+CREATE OR REPLACE VIEW landuse_z7 AS
+    SELECT *
+    FROM osm_landusages_gen0
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 25000000;
+
+CREATE OR REPLACE VIEW landuse_z8 AS
+    SELECT *
+    FROM osm_landusages_gen0
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 5000000;
+
+CREATE OR REPLACE VIEW landuse_z9 AS
+    SELECT *
+    FROM osm_landusages_gen0
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 2000000;
+
+CREATE OR REPLACE VIEW landuse_z10 AS
+    SELECT *
+    FROM osm_landusages_gen0
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 500000;
+
+CREATE OR REPLACE VIEW landuse_z11 AS
+    SELECT *
+    FROM osm_landusages_gen1
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 100000;
+
+CREATE OR REPLACE VIEW landuse_z12 AS
+    SELECT *
+    FROM osm_landusages
+    WHERE type IN ('wood', 'nature_reserve', 'national_park', 'forest')
+      AND st_area(geometry) > 10000;
+
+CREATE OR REPLACE VIEW landuse_z13toz14 AS
+    SELECT *
+    FROM osm_landusages
+    WHERE type NOT IN ('wetland', 'marsh', 'swamp', 'bog', 'mud', 'tidalflat');
+\end{sqlcode}
+
+\section{Recursive SQL Query}
+
+\subsection{From shapes to tiles}
+
+\begin{sqlcode}
+SELECT DISTINCT tile_x AS x, tile_y AS y, tile_z AS z
+FROM landuse_z12 AS l
+INNER JOIN LATERAL overlapping_tiles(geometry) AS t ON true
+ORDER BY tile_z
+\end{sqlcode}
+
+\subsection{From tiles to shapes}
+
+\begin{sqlcode}
+WITH RECURSIVE overlapping_tiles(x, y, z, e) AS (
+  SELECT 0, 0, 0, EXISTS(
+    SELECT 1 FROM changed_poi_points WHERE geometry && CDB_XYZ_Extent(0, 0, 0)
+  )
+  UNION ALL
+  SELECT x*2 + xx, y*2 + yy, z+1, EXISTS(
+    SELECT 1 FROM changed_poi_points
+    WHERE geometry && CDB_XYZ_Extent(x*2 + xx, y*2 + yy, z+1)
+    ) FROM overlapping_tiles,
+    (VALUES (0, 0), (0, 1), (1, 1), (1, 0)) as c(xx, yy) 
+    WHERE e AND z < 14
+), changed_poi_points AS (
+  SELECT * FROM landuse_z12
+)
+SELECT z, x, y FROM overlapping_tiles where e;
+\end{sqlcode}
+
+\section{Calculate covered Tiles}
+
+\subsection{Recursive SQL query}
+
+Calculating the tiles covered by geometries can be done in SQL.
+
+\begin{sqlcode}
+CREATE OR REPLACE FUNCTION overlapping_tiles(
+    geom geometry
+) RETURNS TABLE (
+    tile_z INTEGER,
+    tile_x INTEGER,
+    tile_y INTEGER
+) AS $$
+BEGIN
+    RETURN QUERY 
+        WITH RECURSIVE tiles(x, y, z, e) AS (
+            SELECT 0, 0, 0, geom && CDB_XYZ_Extent(0, 0, 0)
+            UNION ALL
+            SELECT x*2 + xx, y*2 + yy, z+1,
+                   geom && CDB_XYZ_Extent(x*2 + xx, y*2 + yy, z+1)
+            FROM tiles,
+            (VALUES (0, 0), (0, 1), (1, 1), (1, 0)) as c(xx, yy) 
+            WHERE e AND z < 14
+        )
+        SELECT z, x, y FROM tiles WHERE e;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+\end{sqlcode}
+
+
+\subsection{Tile Cover}
+
+With the Mapbox tilecover library it is faster than using pure SQL.
+
+\begin{javascriptcode}
+function recentDirtyViews() {
+    return db
+        .one('SELECT MAX(timestamp) FROM osm_timestamps')
+        .then(function(result) { return result.max; })
+        .then(function(timestamp) {
+            return q.all([
+                detectDirtyTiles('water_label_z10', timestamp, 10, 10),
+                detectDirtyTiles('water_label_z11', timestamp, 11, 11),
+                detectDirtyTiles('water_label_z12', timestamp, 12, 12),
+                detectDirtyTiles('water_label_z13', timestamp, 13, 13),
+                detectDirtyTiles('water_label_z14', timestamp, 14, 14),
+                detectDirtyTiles('poi_label_z14', timestamp, 14, 14),
+                detectDirtyTiles('road_label_z8toz10', timestamp, 8, 10),
+                detectDirtyTiles('road_label_z11', timestamp, 11, 11),
+                detectDirtyTiles('road_label_z12toz13', timestamp, 12, 13),
+                detectDirtyTiles('road_label_z14', timestamp, 14, 14),
+                detectDirtyTiles('waterway_label_z8toz12', timestamp, 8, 12),
+                detectDirtyTiles('waterway_label_z13toz14', timestamp, 13, 14),
+                detectDirtyTiles('housenum_label', timestamp, 14, 14)
+            ]);
+        }).then(_.flatten);
+}
+\end{javascriptcode}
+
+\subsection{Criterias}\label{criterias}
+
+\paragraph{Speed} 
+The detection of affected tiles must be as fast as possible. 
+The goal is to apply updates of \osm{} within one day. If the dirty tiles detection
+already takes longer than that it is no longer possible to keep up with \osm{} updates.
+
+\paragraph{Single Source of Truth}
+
+In both approaches if a query in the data style has been changed it shouldn't be necessary
+to edit the code in multiple places to support that change to keep it maintainable.
+
+

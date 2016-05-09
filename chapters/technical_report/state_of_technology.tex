@@ -1,0 +1,55 @@
+\chapter{State of Technology}
+
+As of today most web maps are based on raster tiles except a few big providers like Google, Mapbox and Apple.
+%\marginpar{The \hyperref[history-of-webmaps]{\emph{History of Webmaps}} chapter provides more details.}
+The rest of the industry is now in the transition from raster based maps into vector based maps. For vector based maps the Mapbox Vector Tile Specification\cite{4_github_2015} is the most dominant Open Source specification of vector tiles.
+
+\section{Current Vector Data Providers}
+
+While the deployment setup for vector based maps is much simpler than
+the traditional raster tile setup the most complex part is still
+the creation of vector data which takes a lot of time and care.
+
+\paragraph{Mapbox}
+
+Mapbox provides vector tiles of the entire world as part of its
+map hosting technologies since 2012 branded as Mapbox Streets\cite{5_cole_2015}. Mapbox also provides the vector data for buyers of their Mapbox Atlas Server\cite{6_mapbox_2015} starting at \$49,000 and distributes quarterly updates for \$10,000 per year .
+
+\paragraph{Mapzen}
+
+Mapzen provides API access to their public vector tiles\cite{7_mapzen.com_2015}.
+%\marginpar{Mapzen vector tiles can also be requested in GeoJSON, TopoJSON and Open Science Map format.}
+Mapzen states that access and the platform should remain free and Open Source\cite{8_mapzen.com_2015}. Mapzen however
+does not give access to the entire raw data and one is bound to
+the limitations of the service.
+
+\paragraph{Kartotherian}
+
+The Kartotherian\cite{9_mediawiki.org_2015} project from the Wikimedia Foundation\cite{10_wikimediafoundation.org_2015} is very similar to this project.
+The goal is to provide a free Map service that everyone can use for free.
+The process is documented but the data is still bound to the service and not available as download.
+The quality of the vector tiles is continuously improved but still lacking very important features.
+Kartotherian is a great project which the findings of this thesis could be contributed in the future.
+
+\paragraph{Google and Apple}
+
+Apple started using vector tiles in their Apple Maps product in 2012\cite{wiki:apple-maps}  and  Google is using vector tiles since 2013\cite{wiki:google-maps} but they are both not accessible for the general public and use a proprietary format. 
+
+\section{Characteristics}
+
+While the providers open the process they still own the data in order to keep their strategic advantages and promote the use of their products using this data.
+The open process is a wonderful step in the right direction, yet it requires great understanding
+of the technology and sufficient computing power to actually
+execute the workflow of producing vector tiles with worldwide coverage.
+
+\section{Shortcomings}
+
+The providers already solve the problem of producing the vector tiles
+and making it accessible. The data however can only be used
+via their services.
+\newline{}
+Being able to download world data and use it in a custom server
+infrastructure, offline and without strings attached is a big advantage
+and a problem this thesis wants to solve.
+
+\newpage

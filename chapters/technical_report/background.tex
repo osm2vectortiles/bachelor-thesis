@@ -1,0 +1,69 @@
+\chapter{Background}
+
+This chapter describes the background of this project in terms of the technology and what was done during study thesis.
+
+\section{Evolution of digital maps}\label{part1_evolution_of_digital_maps}
+
+Web mapping has gone through different technological changes in recent years. It is important to understand the evolution of web maps to understand why vector tiles are quite a fundamental change in how maps work.
+
+\paragraph{Phase 1: Untiled Static
+Maps}
+
+In the beginning WMS servers generated static images for the viewport
+of the map.
+
+\paragraph{Phase 2: Raster Tiles}
+
+In 2005 Google introduced Google Maps and XYZ 
+tiles\cite{v_1_wiki.openstreetmap.org_2015}
+which delivered a idempotent raster image for coordinates specified by a
+tile index.
+
+\paragraph{Phase 2.5: Raster Tiles with Vector
+Overlays}
+
+To provide a level of interactivity, tools like
+Leaflet\cite{v_2_leafletjs.com_2015} support rendering vector
+data like SVG on top of a raster based maps.
+
+\paragraph{Phase 2.75: Raster Tiles from Vector
+Tiles}
+
+For backwards compatibility and faster serving of raster tiles vector
+tiles where introduced to avoid querying a database.
+
+\paragraph{Phase 3: Vector Tiles}
+
+Vector tiles are delivered directly to the browser and rendered by Web
+GL based clients.
+\newline{}
+Improving the use of vector data in web mapping is often shown as the next challenge
+of web mapping \cite[p.~88]{gaffuri2012toward}
+
+\section{Scope and Limitations of study thesis}\label{part1_scope_of_study_thesis}
+
+The OSM2VectorTiles project started as a study thesis in the fall semester of 2015. The goal of the thesis was to allow anyone to create custom OSM maps without managing complex infrastructure.
+
+\subsection{Scope}\label{part1_scope}
+
+The scope of the study thesis was to create a repeatable workflow for generating vector tiles based on OpenStreetMap data. This workflow was intended to run on a single machine. Secondly the vector tile data for Switzerland was delivered. The workflow and how to use the vector tiles to create a custom map was documented on our project website (\url{www.osm2vectortiles.org}).
+
+\subsection{Limitations}\label{part1_limitations}
+
+\begin{itemize}
+    \item The workflow is not intended to be distributed on multiple machines \item Once the vector tiles are generated it is not possible to update them
+\end{itemize}
+
+\section{Role of Klokan Technologies}\label{part1_role_of_klokan_technologies}
+
+Petr Pridal, CEO of Klokan Technologies was the initiator of the project. He saw the potential for a free and open-source process to create vector tiles. In addition he acted as an adviser for all technical questions that came up during the project. 
+
+\section{Real World usage examples of OSM2VectorTiles}\label{part1_examples}
+
+After the project was released people quickly found interest in the project and used it already in real projects.
+
+\begin{itemize}
+    \item MapHub.net allows you to create interactive customizable maps to organize your own geo-data. It is using OSM2VectorTiles based basemaps to provide a variety of basemaps to choose from for it’s users.
+    \item NOAA created a completely offline application based on the vector tiles of OSM2VectorTiles which is installed on a small Intel NUC hardware and used now in the airplanes after natural disasters (floods, hurricanes, etc) in the USA by pilots as an aid for the planned flying rounds to capture imagery of the affected area properly.
+    \item The GeoPortal of Mecklenburg County GIS is using OSM2VectorTiles in combination with custom data as a basemap to present important information to citizens
+\end{itemize}

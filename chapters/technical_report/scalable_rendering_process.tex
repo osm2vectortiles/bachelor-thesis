@@ -1,0 +1,64 @@
+\chapter{Scalable Rendering Process}
+
+\section{Jobs}
+
+To render the entire planet the work must be divided.
+The export process at the most basic level takes a bounding box and renders just
+the tiles from this section of the entire planet into the MBTiles SQLite database.
+Each job therefore consists of either a bounding box derived from a tile (pyramid job) or a list of tiles (list job).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{images/bbox_to_tile.png}
+  \caption{Mapnik renders bounding box from planet into SQLite database}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.84\textwidth]{images/distributed_export_process.png}
+  \caption{Distributed rendering process using message queues}
+\end{figure}
+
+\section{Merging Results}
+
+Each job is producing a SQLite database container with the tiles stored.
+To merge the different databases together into one large database the SQLite \texttt{REPLACE INTO} is used.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{images/merge-jobs.png}
+  \caption{Merge completed MBTiles files together}
+\end{figure}
+
+
+\subsection{Pyramid Job}
+
+To divide the work for rendering the planet into equal parts across the world we use the XYZ tiling scheme and divide the planet into several subpyramids.
+
+\subsubscection{Algorithm}
+
+\begin{enumerate}  
+    \item Choose job zoom level
+    \item Calculate all the tiles for job zoom level
+    \item Render subpyramid from job zoom level down to max zoom level
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/pyramid_job.png}
+  \caption{Pyramid job of a zoom level 2 tile and the descendants}
+\end{figure}
+
+\subsubscection{Example}
+
+Given the job zoom level z8 and the max zoom level z14 the planet is divided into $4^{8}$ jobs.
+This means each subpyramid tasks consists of rendering all descendant tiles from a z8 tile.
+Each task therefore consists of 5461 tiles ($4^{0}+4^{1}+4^{2}+4^{3}+4^{4}+4^{5}+4^{6}$). \\
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/switzerland_tiled_z8.png}
+  \caption{Map divided into z8 tiles}
+\end{figure}
+
+\section{List Job}
