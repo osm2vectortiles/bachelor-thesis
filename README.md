@@ -1,6 +1,6 @@
-## Bachelor Thesis
+## HSR Student Research Project Thesis [![PDF Status](https://www.sharelatex.com/github/repos/osm2vectortiles/osm2vectortiles-thesis/builds/latest/badge.svg)](https://www.sharelatex.com/github/repos/osm2vectortiles/osm2vectortiles-thesis/builds/latest/output.pdf)
 
-This repository contains the bachelor thesis of osm2vectortiles. [PDF Build](https://www.sharelatex.com/project/56cc1d3d63b23d6c0a2c7776/output/output.pdf)
+This repository contains the research project thesis for osm2vectortiles.
 
 
 ### License / Credits

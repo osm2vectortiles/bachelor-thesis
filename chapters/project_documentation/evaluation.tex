@@ -244,17 +244,3 @@ function recentDirtyViews() {
         }).then(_.flatten);
 }
 \end{javascriptcode}
-
-\subsection{Criterias}\label{criterias}
-
-\paragraph{Speed} 
-The detection of affected tiles must be as fast as possible. 
-The goal is to apply updates of \osm{} within one day. If the dirty tiles detection
-already takes longer than that it is no longer possible to keep up with \osm{} updates.
-
-\paragraph{Single Source of Truth}
-
-In both approaches if a query in the data style has been changed it shouldn't be necessary
-to edit the code in multiple places to support that change to keep it maintainable.
-
-

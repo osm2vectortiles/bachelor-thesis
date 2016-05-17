@@ -25,6 +25,7 @@ The Mapbox GL Style is a JSON object which defines what data to draw, the order 
 
 The example below defines that the layer called "water" should have a blue fill-color.
 
+\begin{listing}[H]
 \begin{jsoncode}
 "layers": [
   {
@@ -38,13 +39,16 @@ The example below defines that the layer called "water" should have a blue fill-
   }
 ]
 \end{jsoncode}
-
+\caption{Example of Mapbox GL Style}
+\label{example_of_mapbox_gl_style}
+\end{listing}
 
 \section{TM2Source Project}\label{par1_tm2source_project}
 
 The TM2Source Project defines the different layers in the vector tiles. This definition is the handed over to Mapnik which generates the vector tiles based on this information.\\
 The listing below shows a typical layer definition in the source project. The data source of this layer is a postgis database. The where clause in the SQL query filters the data to only return data where the geometry is inside the bounding box of the current tile (geometry && !bbox!). And secondly this layer should only be contained in tiles on zoom level 14 (z(!scale_denominator!) = 14).
 
+\begin{listing}[H]
 \begin{yamlcode}
 - id: barrier_line
     Datasource: 
@@ -74,3 +78,7 @@ The listing below shows a typical layer definition in the source project. The da
     properties: 
       "buffer-size": 4
 \end{yamlcode}
+\caption{Definition of layer in source project}
+\label{definition_of_layer_in_source_project}
+\end{listing}
+
