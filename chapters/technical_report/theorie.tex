@@ -4,7 +4,7 @@ This chapter describes the underlying concepts which are used throughout the the
 
 \section{XYZ Coordinates}\label{part1_xyz_coordinates}
 
-To reduce the amount of data which has to be loaded, vector tiles make use of slicing the data into tiles. One tile contains the geometry data which is visible in 512 x 512 pixels of the screen. The file structure is organized in a 3-dimensional coordinate system (z/x/y), where z represents the zoom level and x and y the axes. This schema is known as XYZ coordinate schema. OSM2VectorTiles provides tiles down to zoom level 14, which results in 268'435'456 ($2^{2*14}$) tiles.
+To reduce the amount of data which has to be loaded, vector tiles make use of slicing the data into tiles. One tile contains the geometry data which is visible in 512 x 512 pixels of the screen. The file structure is organized in a 3-dimensional coordinate system (z/x/y), where z represents the zoom level and x and y the axes. This schema is known as XYZ coordinate schema. OSM2VectorTiles provides tiles down to zoom level 14, which results in 357\,913\,941 tiles.
 
 \section{Vector Tiles}\label{part1_vector_tiles}
 
@@ -13,17 +13,16 @@ The data inside of vector tiles is structured into layers and features. A vector
 
 \subsection{Mapbox Vector Tile Specification}\label{part1_vector_tile_specification}
 
-The Mapbox Vector Tile Specification defines how to encode tiled vector data. More details about the encoding and internal structure of vector tiles can be found in the specification[https://github.com/mapbox/vector-tile-spec].
+The Mapbox Vector Tile Specification defines how to encode tiled vector data. More details about the encoding and internal structure of vector tiles can be found in the specification\cite{104_mapbox.com_2016}.
 
 \section{Map Styling}\label{part1_map_styling}
 
 Additionally to the vector tiles the map style is needed. Vector tiles define the geometry data and associated meta data, whereas the map style defines how this data should be visually styled.
+\clearpage
 
 \subsection{Mapbox GL Style}
 
-The Mapbox GL Style is a JSON object which defines what data to draw, the order to draw it in, and how to style the data when drawing it. [https://www.mapbox.com/mapbox-gl-style-spec/]
-
-The example below defines that the layer called "water" should have a blue fill-color.
+The Mapbox GL Style is a JSON object which defines what data to draw, the order to draw it in and how to style the data when drawing it\cite{105_mapbox.com_2016}. The example below defines that the layer called "water" should have a blue fill-color.
 
 \begin{listing}[H]
 \begin{jsoncode}
@@ -45,27 +44,21 @@ The example below defines that the layer called "water" should have a blue fill-
 
 \section{TM2Source Project}\label{par1_tm2source_project}
 
-The TM2Source Project defines the different layers in the vector tiles. This definition is the handed over to Mapnik which generates the vector tiles based on this information.\\
-The listing below shows a typical layer definition in the source project. The data source of this layer is a postgis database. The where clause in the SQL query filters the data to only return data where the geometry is inside the bounding box of the current tile (geometry && !bbox!). And secondly this layer should only be contained in tiles on zoom level 14 (z(!scale_denominator!) = 14).
+The TM2Source Project defines the different layers in the vector tiles. This definition is handed over to Mapnik which generates the vector tiles based on this information.\\
+The listing below shows a typical layer definition in the source project. The data source of this layer is a postgis database. The where clause in the SQL query filters the data to only return data where the geometry is inside the bounding box of the current tile (geometry && !bbox!). And secondly this layer should only be contained in tiles on zoom level 14 (z(!scale\_denominator!) = 14).
 
 \begin{listing}[H]
 \begin{yamlcode}
 - id: barrier_line
     Datasource: 
       dbname: osm
-      extent: -20037508.34,-20037508.34,20037508.34,20037508.34
-      geometry_field: ''
-      geometry_table: ''
       host: db
-      key_field: osm_id
-      key_field_as_attribute: false
-      max_size: 512
       password: osm
       port: 5432
-      srid: ''
       table: |-
         (
-          SELECT osm_ids2mbid(osm_id, is_polygon(geometry)) AS osm_id, geometry, barrier_line_class(type) AS class
+          SELECT osm_ids2mbid(osm_id, is_polygon(geometry)) AS osm_id, geometry,
+          barrier_line_class(type) AS class
           FROM barrier_line_z14
           WHERE geometry && !bbox!
             AND z(!scale_denominator!) = 14

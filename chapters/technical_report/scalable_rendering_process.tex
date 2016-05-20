@@ -1,17 +1,21 @@
 \chapter{Scalable Rendering Process}
 
-Rendering the planet file from z0 to z14 requires $357\,913\,941$ tiles to be rendered. \\
-$4^0+4^1+4^2+4^3+4^4+4^5+4^6+4^7+4^8+4^9+4^{10}+4^{11}+4^{12}+4^{13}+4^{14}=357\,913\,941$ \\
-
-Rendering this amount of tiles serially is no longer possible due to two reasons.
+Rendering the planet file from zoom level 0 to zoom level 14 requires $\sum_{i=1}^{14} 4^i = 357\,913\,941$ tiles to be rendered. 
+Rendering this amount of tiles serially is no longer possible due to two problems.
 
 \begin{itemize}
-    \item The rendering process might fail and all progress is lost
-    \item A single worker process takes approximately one month to render the planet with a throughput of $500\,000$ tiles per hour
+    \item The rendering process might fail and progress is lost
+    \item A single worker process takes approximately 276 days to render the planet with a throughput of $54\,000$ tiles per hour
 \end{itemize}
 
-To reduce the rendering time and ensure a failsafe process. The rendering process (Mapnik)
-at the most basic level renders the tiles within the given bounding box into a SQLite database (MBTiles). To adapt the process the global bounding box needs to be cut into many smaller bounding boxes and the many small SQLite databases need to be merged together into a large planet SQLite database.
+To solve these problems two measurements described in \autoref{split-rendering-process-task} and \autoref{list-job} have been taken.
+
+%-----------------------------------------
+\section{Split Rendering Process into Jobs}\label{split-rendering-process-task}
+
+The rendering process (Mapnik)
+renders tiles within the given bounding box into a SQLite database (MBTiles). To adapt the process the global bounding box needs to be divided into many smaller bounding boxes and the many small SQLite databases need to be merged together into a large planet SQLite database at the end of the process.
+The unit of a job therefore is a bounding box derived from a XYZ tile index (pyramid job \autoref{pyramid-job}) or a list of tiles (list job \autoref{list-job}).
 
 \begin{figure}[H]
   \centering
@@ -19,21 +23,17 @@ at the most basic level renders the tiles within the given bounding box into a S
   \caption{Adapt rendering process to divide work and merge it back together}
 \end{figure}
 
-%-----------------------------------------
-\section{Jobs}
-
-The unit of a job is a bounding box derived from a tile index (pyramid job \ref{pyramid-job}) or a list of tiles (list job \ref{list-job}).
-
 \subsection{Pyramid Job}\label{pyramid-job}
 
-To divide the work for rendering the planet into equal parts across the world we use the XYZ tiling scheme and divide the planet into several subpyramids.
+To divide the work for rendering the planet into equal parts across the world the XYZ tiling scheme is used to divide the planet into several subpyramids.
 
 \subsubsection*{Algorithm}
 
 \begin{enumerate}  
-    \item Choose job zoom level
-    \item Calculate all the tiles for job zoom level
-    \item Render subpyramid from job zoom level down to max zoom level
+    \item Choose job zoom level $z$ and maximum zoom level $Z$
+    \item Calculate the $4^z$ tiles for job zoom level
+    \item Convert XYZ tile index into a WGS84 bounding box
+    \item Render bounding box from zoom level $z$ down to the maximum zoom level $Z$
 \end{enumerate}
 
 \begin{figure}[H]
@@ -44,14 +44,14 @@ To divide the work for rendering the planet into equal parts across the world we
 
 \subsubsection*{Example}
 
-Given the job zoom level z8 and the max zoom level z14 the planet is divided into $4^{8}$ jobs.
+Given the job zoom level $z=8$ and the max zoom level $Z=14$ the planet is divided into $4^{8}$ jobs.
 This means each subpyramid task consists of rendering all descendant tiles from a z8 tile.
-Each task therefore consists of 5461 tiles ($4^{0}+4^{1}+4^{2}+4^{3}+4^{4}+4^{5}+4^{6}$). \\
+Each job therefore consists of $\sum_{i=0}^{6} 4^i = 5\,461$ tiles that need to be rendered.  \\
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.4\textwidth]{images/switzerland_tiled_z8_small.png}
-  \caption{Map divided into z8 tiles}
+  \caption{Map divided into tasks at job zoom level 8}
 \end{figure}
 
 %-----------------------------------------

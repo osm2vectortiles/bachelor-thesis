@@ -4,12 +4,10 @@ The main requirement regarding the content of the vector tiles is to be compatib
 
 \section{Approach}
 
-The documentation of Mapbox Streets contains a detailed layer reference. For each layer the used attributes and values are listed. However the documentation lacks an important information. It doesn't contain the information on which zoom level a layer or attribute is shown. This information was retrieved by analyzing vector tiles on different zoom levels.\\\\
-All of this information was used to define the vector tiles in the so called source project. The source project contains an entry for each layer and a data source which can be a shapefile, a geojson file or a database. 
+The documentation of Mapbox Streets contains a detailed layer reference with information about attributes and values these attributes can have. However the documentation lacks an important information. It doesn't contain the information on which zoom level a layer or attribute is shown. This information had to be retrieved by analyzing vector tiles on different zoom levels. All of this information was used to create the definition of the vector tiles.
 
 \section{Implementation}
-
-The information described above was used to decide which OpenStreetMap data needs to be imported and to define each layer with its attributes.
+This section describes the main components which needed to be implemented in order to generate vector tiles. The figure below shows a simplified version of the entire process from data import to vector tile rendering. 
 
 \begin{figure}[H]
 \centering
@@ -17,11 +15,10 @@ The information described above was used to decide which OpenStreetMap data need
 \caption{Simplified process of data import to vector tile rendering}
 \end{figure}
 
-The figure above shows a simplified version of the entire process from data import to vector tile rendering. 
 
 \subsection{Import Mapping}
 
-Imposm3 is used to import the OSM data into the Postgres database. Imposm3 expects a definition of which OSM tags should be mapped to which database tables. \\\\
+Imposm3 is used to import the OSM data into the Postgres database. Imposm3 expects a definition of which OSM tags should be mapped to which database tables.\\
 The following definition maps OSM tags with the key \textbf{aeroway} and one of the values \textbf{runway}, \textbf{taxiway}, \textbf{apron} or \textbf{helipad} to the table \textbf{aero\_polygon}. The \textbf{aero\_polygon} table has the columns id, geometry, timestamp and type. Imposm3 combines the OSM nodes, ways and relations to one of point, linestring or polygon.
 
 \begin{listing}[H]
@@ -48,7 +45,7 @@ aero_polygon:
 \label{definition_of_mapping}
 \end{listing}
 
-We decided to have a database table per layer inside the vector tiles. A table contains only geometries of the same type(one of point, linestring or polygon). If a layer contains geometries of more than one type, a separate tables for each type is created.
+A table contains only geometries of the same type(one of point, linestring or polygon). If a layer contains geometries of more than one type, a separate tables for each type is created.
 
 \begin{figure}[H]
 \centering
@@ -58,7 +55,7 @@ We decided to have a database table per layer inside the vector tiles. A table c
 
 \subsection{Zoom Level Views}
 
-Since only a subset of the data in the tables is shown on a given zoom level, SQL views for each zoom level the layer is visible on were created. The figure below shows the SQL view for zoom level 9 of the aeroway layer. The zoom level view merges the data of both tables osm\_aero\_linestring and osm\_aero\_polygon and filters the data to only contain geometries of type runway.
+Since only a subset of the data in the tables is shown on a given zoom level, SQL views for each zoom level the layer is visible on were created. The figure below shows the definition of the SQL view for zoom level 9 of the aeroway layer. The zoom level view merges the data of both tables osm\_aero\_linestring and osm\_aero\_polygon and filters the data to only contain geometries of type runway.
 
 \begin{listing}[H]
 \begin{sqlcode}
@@ -75,9 +72,9 @@ CREATE OR REPLACE VIEW aeroway_z9 AS
 \label{definition_of_zoom_level_view}
 \end{listing}
 
-The zoom level views help to decouple the database tables which hold the actual data and the definition of the layer. This is very important for example if new data is added to a layer only the import mapping and the zoom level view needs to be modified. The source project does not need to be modified.
+The zoom level views help to decouple the database tables which hold the actual data and the definition of the layer. This is very helpful for example if new data is added to a layer, only the import mapping and the zoom level view needs to be modified.
 
-\subsection{Vector Tiles Layer Definition}
+\subsection{Layer Definition}
 
 The source project contains the definition of the layers. The data source of the layer is always a Postgres database. The definition contains the meta data to access the database and a query which returns the necessary data for this layer. 
 
@@ -120,27 +117,46 @@ The source project contains the definition of the layers. The data source of the
 
 During the development process of the map a number of problems were discovered and optimizations were implemented. This section explains the most interesting ones.
 
-\subsection{Avoiding costly functions in zoom level views}
+\subsection{Avoiding expensive functions in zoom level views}
 
-The purpose of the zoom level views is to filter the data to only contain data which is shown on a specific zoom level. Costly calculations or transformation should be avoided in these views.\\
-For example there are multiple label layers which transform the polygon geometry to a point geometry. Doing this transformation in the view results in bad rendering performance. The reason for this was that every time the layer query was executed all rows of the view were transformed and then most of the rows were discarded because they didn't fit in the bounding box. So first selecting the right row and then executing the transformation on this subset resulted obviously in way better performance.
+The purpose of the zoom level views is to filter the data to only contain data which is shown on a specific zoom level. Expensive calculations or transformations should be avoided in these views.\\
+For example there are multiple label layers which transform the polygon geometry to a point geometry. It turned out that doing this transformation in the view results in bad rendering performance. The reason for this was that every time the layer query was executed all rows of the view were transformed and then most of the rows were discarded because they didn't fit in the bounding box. So first selecting the right row and only executing the transformation on this subset resulted obviously in way better performance.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\textwidth]{images/costly_functions}
-\caption{Example of costly function which was moved into the layer query}
+\includegraphics[width=1.0\textwidth]{images/expensive_functions}
+\caption{Example of expensive function which was moved into the layer query}
 \end{figure}
 
 \begin{tcolorbox}[arc=0mm,boxrule=1pt,title=Learning]
-Costly transformations should be either made in a preprocessing step or if that's not possible the dataset should be reduced to the smallest size possible.
+Expensive transformations should either be  made in a preprocessing step or if that's not possible the dataset should be reduced to the smallest size possible.
 \end{tcolorbox}
+\clearpage
 
 \subsection{Helper functions}
 
 Small helper functions were created to make the queries more readable and secondly to reuse common logic through multiple queries.\\ 
 Mapbox has introduced a complex classification schema to be able to filter features of a single layer. For example the layer landuse contains features of class park, school or hospital. This allows people to style these areas differently. OpenStreetMap has an entirely different data model. Therefore a helper function was created to assign the right class value to each row.
 
-\paragraph{Adding indices on costly helper functions} In many cases this helper functions are used inside the zoom level views. For example from zoom level 5 to 6 only rows of class wood are shown. It turned out that this function became a bottleneck. The function could not be moved to the layer query like the example with the ST\_PointOnSurface transformation above, because it is used to filter the data. So an index on the stored procedure was created which improved the performance again. 
+\begin{listing}[H]
+\begin{sqlcode}
+CREATE OR REPLACE FUNCTION airport_label_class(kind VARCHAR, type VARCHAR) RETURNS VARCHAR
+AS $$
+BEGIN
+    RETURN CASE
+        WHEN kind = 'heliport' THEN 'heliport'
+        WHEN kind = 'aerodrome' AND type IN ('public', 'Public') THEN 'airport'
+        WHEN kind = 'aerodrome' AND type IN ('private', 'military/public') THEN 'airfield'
+        ELSE 'airfield'
+    END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+\end{sqlcode}
+\caption{Definition of classification helper function}
+\label{definition_of_classificatino_helper_function}
+\end{listing}
+
+\paragraph{Expensive helper functions} In many cases this helper functions are used inside the zoom level views. For example from zoom level 5 to 6 only rows of class wood are shown. It turned out that this function became a bottleneck. The function could not be moved to the layer query like the example with the ST\_PointOnSurface transformation above, because it is used to filter the data. So an index on the stored procedure was created which improved the performance.
 
 \begin{listing}[H]
 \begin{sqlcode}
@@ -152,11 +168,12 @@ CREATE OR REPLACE VIEW landuse_z5toz6 AS
 \caption{Definition of landuse zoom level view}
 \label{definition_of_landuse_zoom_level_view}
 \end{listing}
-
+\clearpage
 
 \subsection{OSM id transformation}
 
-The data model of OSM consists of nodes, ways and relations. The OSM ID is not unique across these object types. Therefore Mapbox came up with an approach to make them unique inside vector tiles. IDs are multiplied by 10 and then increased by 0 to 4 depending on the type\cite{103_mapbox.com_2016}.
+The data model of OSM consists of nodes, ways and relations. Every object gets its own OSM id assigned. This OSM ID is not unique across the object types. Therefore one can find three object with the same OSM id but with different object type.\\
+While this works perfectly fine for OSM, this represents a problem because during the import process the OSM objects get transformed to PostGIS geometries. For example an object of type way and relation could get transformed to a linestring geometry. In order to ensure that the OSM id remains unique it needs to be transformed.
 
 \begin{table}[H]
 \centering
@@ -165,19 +182,33 @@ The data model of OSM consists of nodes, ways and relations. The OSM ID is not u
 \hline
 OSM type & Geometry type                  & OSM ID transform \\ \hline
 node     & point                          & id x 10          \\ \hline
-way      & line                           & (id x 10) + 1    \\ \hline
+way      & linestring                           & (id x 10) + 1    \\ \hline
 way      & polygon + polygon label points & (id x 10) + 2    \\ \hline
-relation & line                           & (id x 10) + 3    \\ \hline
-relation & polygon + polygon lable points & (id x 10) + 4    \\ \hline
+relation & linestring                           & (id x 10) + 3    \\ \hline
+relation & polygon + polygon label points & (id x 10) + 4    \\ \hline
 \end{tabular}
 \caption{OSM id transformation}
-\label{my-label}
+\label{osm_id_transformation}
 \end{table}
 
+Mapbox came up with an approach to make them unique inside vector tiles\cite{103_mapbox.com_2016}.
 
+\subsubsection*{Algorithm}
+Input: OpenStreetMap osm\_id\\
+Output: Mapbox osm\_id
+\begin{enumerate}
+    \item If osm\_id is point geometry return osm\_id * 10
+    \item If osm\_id has object type way and was transformed to linestring\\
+    return (osm\_id * 10) + 1
+    \item If osm\_id has object type way AND was transformed to polygon\\
+    return (osm\_id * 10) + 2
+    \item If  osm\_id has object type relation AND was transformed to linestring\\
+    return (osm\_id * 10) + 3
+    \item If osm\_id has object type relation AND was transformed to polygon\\
+    return (osm\_id * 10) + 4
+\end{enumerate}
 
-%----------------------------
-\newpage{}
+\clearpage
 \subsection{Place Label Rank Calculation}
 
 Ranks are important for determining at which zoom level which places should be displayed. The NaturalEarth database contains places with scaleranks assigned by humans and is the most important source for better quality labels (historic places might be much more important despite having a very small population). This dataset is merged with the imported OSM data.
