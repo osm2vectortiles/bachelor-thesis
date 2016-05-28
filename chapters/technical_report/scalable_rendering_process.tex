@@ -25,7 +25,7 @@ The unit of a job therefore is a bounding box derived from a XYZ tile index (pyr
 
 \subsection{Pyramid Job}\label{pyramid-job}
 
-To divide the work for rendering the planet into equal parts across the world the XYZ tiling scheme is used to divide the planet into several subpyramids.
+To divide the work for rendering the planet into equal parts across the world the XYZ coordinate schema described in \autoref{part1_xyz_coordinates} is used to divide the planet into several subpyramids.
 
 \subsubsection*{Algorithm}
 
@@ -45,7 +45,7 @@ To divide the work for rendering the planet into equal parts across the world th
 \subsubsection*{Example}
 
 Given the job zoom level $z=8$ and the max zoom level $Z=14$ the planet is divided into $4^{8}$ jobs.
-This means each subpyramid task consists of rendering all descendant tiles from a z8 tile.
+This means each subpyramid task consists of rendering all descendant tiles from a tile at zoom level 8.
 Each job therefore consists of $\sum_{i=0}^{6} 4^i = 5\,461$ tiles that need to be rendered.  \\
 
 \begin{figure}[H]
@@ -61,7 +61,7 @@ It is important to be able to update distinct tiles to fix bugs later on or rere
 
 \subsubsection*{Algorithm}
 
-To group tiles that are close in close proximity in one batch job the tiles are sorted lexically by their Quadkey.
+To group tiles that are in close proximity in one batch job the tiles are sorted lexically by their Quadkey.
 
 \begin{enumerate}  
     \item Given a large list of tiles
@@ -126,13 +126,13 @@ def split_tiles_into_batch_jobs(tiles, batch_size):
 \newpage
 \section{Distributed Architecture}
 
-To distribute across several hosts a distributed architecture using work message queues has been implemented.
+To distribute across several hosts a distributed architecture (\autoref{distributed_rendering_architecture}) using job queues has been implemented.
 
 \begin{enumerate}  
     \item Pyramid or list jobs are created by \texttt{generate-jobs} and put into the \texttt{jobs} queue
-    \item The different worker processes on different hosts poll the \texttt{jobs} queue for new jobs and try to render them in the given time frame.
+    \item The different worker processes on different hosts poll the \textbf{jobs} queue for new jobs and try to render them in the given time frame.
     \item If the rendering does not complete in the given time frame it is put into the \texttt{failed-jobs} queue.
-    \item The resulting SQLite database is uploaded to a S3 compatible object store and linked in the result message which is stored in the \texttt{results} queue.
+    \item The resulting SQLite database is uploaded to a S3 compatible object store and linked in the result message which is stored in the \textbf{results} queue.
 \end{enumerate}
 
 
@@ -140,12 +140,13 @@ To distribute across several hosts a distributed architecture using work message
   \centering
   \includegraphics[width=0.9\textwidth]{images/distributed_rendering_architecture.png}
   \caption{Distributed rendering architecture using message queues}
+  \label{distributed_rendering_architecture}
 \end{figure}
 
 \subsubsection{Dealing with Errors}
 
 The message queue is using an acknowledge mechanism together with durable queues.
-This means if any process fails at any stage in the workflow (\texttt{render} or \texttt{merge}) the message is requeued and redelivered to the next worker.
+This means if any process fails at any stage in the workflow (\textbf{render} or \textbf{merge}) the message is requeued and redelivered to the next worker.
 Since there are always some jobs that never complete or have very distinct problems the timeout prevents the workers from being jammed by the same failing jobs over and over again.
 Failed jobs can be inspected and rescheduled at a later point in time.
 
@@ -185,7 +186,7 @@ This is a very fast way of distributing updates to an MBTiles file which can be 
 
 Water tiles is a large part of the resulting planet file since most of the earth is covered in water.
 If a tile only contains water it is not desirable to store the same water geometry on all zoom levels
-from z8 down to z14 (resulting in $21\,589$ tiles all containing the same geometry).
+from z8 down to z14 (resulting in $\sum_{i=0}^{6} 4^i = 5\,461$ tiles all containing the same geometry).
 To prevent this issue all z8 subpyramids containg the same data on all descendant tiles are removed.
 
 \subsubsection*{Algorithm}

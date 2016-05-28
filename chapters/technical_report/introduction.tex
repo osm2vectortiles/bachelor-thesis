@@ -10,7 +10,7 @@
 Vector tiles are the future of web and mobile mapping. The next generation of maps is only possible
 with free and open vector tile sources. The goal of the bachelor thesis is to push mapping forward by providing
 vector tiles that are produced using an open process, completely free of charge and can be used offline.
-Encouraged by the existing real users of the project further improvements need to be done to meet the requirements of developers and cartographers using the project to create custom OSM maps without building up their own rendering pipeline. These actions will lead to further adoption and a healthy Open Source project that will survive this thesis.
+Encouraged by the existing real users of the project further improvements need to be done to meet the requirements of developers and cartographers using the project to create custom OSM maps without building up their own rendering pipeline.
 
 %---------------------------------------
 
@@ -18,22 +18,44 @@ Encouraged by the existing real users of the project further improvements need t
 
 The focus off this bachelor thesis lies on three major problems that need to be solved.
 
+\subsection{Defining Mapbox Vector Tiles}\label{intro_carto_standards}
+
+The vector tiles need to meet certain cartographic standards to enable cartographers to create high quality maps. Creating a global base map from scratch is a huge undertaking with several interesting problems like label placement, importance ranking and fitting the right data into less space. By focusing on quality and compatibility with Mapbox Streets v7 as the vector tile data schema and makes the project truly usable for the end users which expect high quality map and makes it easier for existing users to switch over to \osmvt{}.
 
 \subsection{Scalable rendering process}\label{scalable-rendering-process}
 
 The global vector tiles should be rendered within a reasonable time-frame
 to meet project deadlines and enable developers to iterate quickly on the vector tiles.
-Unfortunately to the sheer amount of tiles a single process on a single machine takes a half year to complete.
+The sheer amount of tiles makes it impossible for a single process to render the entire planet.
 By distributing the process on multiple machines the time for rendering the planet can be significantly reduced only limited
-by the amount of infrastructure available serving as example how to distribute a tile rendering pipeline and enabling
+by the amount of infrastructure available. The solution to this problem will serve as example how to distribute a tile rendering pipeline and enabling
 vector tiles with global coverage.
 
-\subsection{Updatable vector tiles}
+\subsection{Updatable vector tiles}\label{intro_update_vtiles}
 
-\osm{} contributors add several million changesets every day. Keeping a map up to date is of significant relevance to the users of the vector tiles and the contributors. The vector tiles should be released in a fixed weekly interval.
+\osm{} contributors add up to three million nodes every day\cite{osm_wiki_2016}. Keeping a map up to date is of significant relevance to the users of the vector tiles and the contributors. The vector tiles should be released in a fixed weekly interval.
 However rerendering the entire planet using the scalable rendering process is not feasible due to the infrastructure costs. By calculating the tiles that will change in advance and only render those tiles a single machine can keep the vector tiles up to date making the project sustainable for long term. 
 
+\section{Preceding Study Thesis}\label{part1_scope_of_study_thesis}
 
-\subsection{Cartographic Standards}
+The \osmvt{} project originated from the preceding study thesis in the fall semester of 2015 with the same vision as the bachelor thesis to allow anyone to create custom \osm{} maps without managing complex infrastructure. 
 
-The vector tiles need to meet certain cartographic standards to enable cartographers to create high quality maps. Creating a global base map from scratch is a huge undertaking with several interesting problems like label placement, importance ranking and fitting the right data into less space. By focusing on quality and compatibility with Mapbox Streets v7 the vector tile data schema and makes the project truly usable for the end users which expect high quality maps.
+\subsection{Scope}\label{part1_scope}
+
+The scope of the study thesis was to create a repeatable workflow for generating vector tiles based on \osm{} data. 
+
+The study thesis focus lied on solving the problem of creating a basemap and implementing Mapbox Streets v5 at small scale (\autoref{intro_carto_standards}) and as result prerendered vector tile data for Switzerland was delivered.
+This workflow was intended to run on a single machine and was not meant to scale for rendering the entire planet (\autoref{scalable-rendering-process}) or keeping the vector tiles up to date (\autoref{intro_update_vtiles}).
+
+
+\section{Real World Usage Examples}\label{part1_examples}
+
+\osmvt{} is already used in real projects which confirms the demand for such a project. The examples show the potential use cases and customers of prerendered vector tiles.
+
+
+\begin{itemize}
+    \item MapHub.net allows you to create interactive customizable maps to organize your own geo-data. It is using \osmvt{} based basemaps to provide a variety of basemaps to choose from for it’s users.
+    \item NOAA created a completely offline application based on the vector tiles of \osmvt{} which is installed on a small Intel NUC hardware and used now in the airplanes after natural disasters (floods, hurricanes, etc) in the USA by pilots as an aid for the planned flying rounds to capture imagery of the affected area properly.
+    \item The GeoPortal of Mecklenburg County GIS is using \osmvt{} in combination with custom data as a basemap to present important information to citizens.
+    \item The Helsinki Regional Transport Authority (HSL) is using \osmvt{} as source with a custom style to provide map services to other developers as part of the Digitransit platform.
+\end{itemize}
