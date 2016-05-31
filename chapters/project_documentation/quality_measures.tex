@@ -1,10 +1,15 @@
 \chapter{Quality Measures}\label{quality-measures}
 
+Visual Test
+Strutural Test
+Report Tool
+Coding Standards
+
 \section{Testing}\label{testing}
 
 The osm2vectortiles ecosystem is quite diverse with a big collection of small tools that all work together which makes testing really complex.
 
-\section{Integration Test}
+\subsection{Integration Test}
 
 In Travis CI\cite{pm_5_travis-ci.org_2015}  the entire workflow was completed for a small data sample on each commit.
 Because the entire workflow is configured with Docker Compose \cite{pm_6_docs.docker.com_2015} the CI server had to execute all import steps in serial order. This is a straightforward way to check if all components work together correctly
@@ -13,18 +18,28 @@ like missing tables or SQL typos.
 
 \begin{yamlcode}
 script:
+  # Test import
   - docker-compose up -d postgis
-  - docker-compose up -d pgbouncer
+  - sleep 10
+  - docker-compose run import-external
   - docker-compose run import-osm
-  - docker-compose run import-natural-earth
-  - docker-compose run import-water
-  - docker-compose run import-labels
   - docker-compose run import-sql
-  - docker-compose run update-scaleranks
-  - docker-compose run export-local
-  - docker-compose up -d serve
-  - curl "http://localhost:8080/index.json"
+  # Test export
+  - docker-compose run export
+  # Test changed tiles
+  - docker-compose run update-osm-diff
+  - docker-compose run import-osm-diff
+  - docker-compose run changed-tiles
 \end{yamlcode}
+
+\subsection{Visual Testing}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/visual_compare}
+  \caption{Visual Compare Tool}
+  \label{visual_compare} 
+\end{figure}
 
 \section{Guidelines}\label{guidelines}
 To have homogeneous software the contributors have settled on common guidelines in the beginning of the project.
