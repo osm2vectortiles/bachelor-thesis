@@ -1,13 +1,43 @@
 \chapter{Requirements Specification}\label{requirements_specification}
 
-This chapter describes the requirements for the vector tiles and the vector tile server.
+This chapter describes the requirements for the project.
+
+\section{Use Cases}\label{use_cases}
+
+There are two main use cases for this project with use case described in \autoref{use_case_use_vector_tiles} being the most relevant one while use case described in \autoref{use_case_render_vector_tiles} is for a much narrower audience.
+
+\subsection{Render Vector Tiles}\label{use_case_render_vector_tiles}
+
+The user renders her/his own set of vector tiles. Since not all data of \osm{} is inside our vector tiles, some users my want to remove or add additional data. Assuming users that are interested in creating their own vector tiles clone the \osmvt{} repository these are potentially ~70 users each month.
+
+\subsection{Use Vector Tiles}\label{use_case_use_vector_tiles}
+
+The user makes use of the prerendered vector tiles and wants to create her/his own basemap. Assuming users that are interested in using their own vector tiles read the documentation these are potentially ~600 users each month.
 
 \section{User Characteristics}\label{user_characteristics}
 
-There are three user groups interested in this project.
-We can reference the actual personas from GitHub.
+\subsection{Limited or no access to the internet}
 
-\section{User Stories}\label{user_stories}
+Users which have the constraint of limited or no access to the internet can download vector tiles for the entire planet and serve their custom basemap locally.
+
+\subsection{Can't rely on a third-party service}
+
+Many organizations can't afford to rely on a third-party service and want to run their map on-premise.
+
+\subsection{Customizing the look of the basemap}
+
+In many use cases it is desirably to adjust the basemap to better match the design of a product.
+
+\section{Requirements}\label{requirements}
+
+The bachelor thesis consists out of three major requirements out of the use cases described in \autoref{use_cases}. The technically interesting problems of these requirements are described in \autoref{technical_report}.
+
+\begin{itemize}
+    \item Prerendered vector tiles from \osm{} for the entire planet (\autoref{chapter_scalable_rendering_process})
+    \item Update functionality to keep up with future \osm{} changes (\autoref{chapter_updatable_vector_tiles})
+    \item Vector Tiles compatible with Mapbox Streets v7 (\autoref{chapter_defining_mapbox_vector_tiles})
+\end{itemize}
+
 
 \section{Non Functional Requirements}\label{non_functional_requirements}
 
@@ -15,12 +45,20 @@ The non functional requirements are the key to success of this project. If the f
 
 \paragraph{Performance}
 
-The entire initial rendering process for the entire world must be kept below two weeks. The import on the master server should take less than a day while rendering should be kept below two weeks.
+The initial rendering process for the entire world must be kept below two weeks. The import on the master server should take less than a day while rendering should be kept below two weeks.
 Updates should happen in a weekly interval.
 
-\paragraph{Price}
+\paragraph{Learnability}
+
+It is important that users without previous vector tiles or Docker experience can get started with as few obstacles as possible.
+
+\paragraph{Cost}
 
 The cloud instances to render the world once costs around 1500 dollar. The updating should only cost a fraction of this initial investment.
+
+\paragraph{Repeatability}
+
+Since the \osmvt{} will provide continuous updates it is important that the process and results are repeatable.
 
 \paragraph{Compatibility}
 
