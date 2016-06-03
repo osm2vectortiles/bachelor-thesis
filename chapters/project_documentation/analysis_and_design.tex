@@ -1,114 +1,34 @@
 \chapter{Architecture and Design}\label{design}
 
-
-\section{Data Sources}\label{data_sources}
-
-The vector tiles contain data from multiple data sources. This section describes which data sources where used for which layers in the vector tiles.
-
-\subsection{Custom Curated Labels}
-
-The placement and importance of labels of countries, states and seas matters\cite{12_axismaps.github.io_2015} and is important to get right. Data from the overpass API \cite{13_wiki.openstreetmap.org_2015} is converted into GeoJSON and
-manually edited and enhanced with a label rank. For sea labels custom lines have been drawn to place the label along this line.
-
-\begin{table}[H]
-\centering
-    \begin{tabular}{llll}
-    \hline
-    Table Name   & Layer Name & Geometry Type & Description \\
-    \hline                                          
-    custom\_seas       & marine\_label & point    & Marine names \\
-    custom\_countries    & country\_label & point    & Country names \\
-    custom\_states       & state\_label & point    & State names \\
-    \end{tabular}
-    \caption{Tables and layers with custom label data}
-\end{table}
-
-\subsection{OpenStreetMapData}
-
-Certain \osm{} data like borders and land polygons is very sensitive for change.
-The OpenStreetMapData\cite{14_openstreetmapdata.com_2015}
-project takes care of a lot of issues that happen with coastlines
-and provide it in a convenient format. The data is checked by the OSM community
-and released separately.
-\\
-Water polygons\cite{15_openstreetmapdata.com_2015} from OpenStreetMapData were used for the ocean parts of the world. This data set ensures that the water polygons
-work well together with other \osm{} data and splits big water polygons into multiple 
-pieces for performance.
-
-\begin{table}[H]
-\centering
-    \begin{tabular}{llll}
-    \hline
-    Table Name            & Layer Name & Geometry Type & Description \\
-    \hline
-    osm\_ocean\_polygon        & water & polygon       & Ocean, seas, large lakes           \\
-    osm\_ocean\_polygon\_gen0        & water & polygon       & Simplified ocean, seas, large lakes           \\
-    \end{tabular}
-    \caption{Table imported from OpenStreetMapData}
-\end{table}
-
-\newpage
-\subsection{Natural Earth}
-
-The Natural Earth \cite{16_naturalearthdata.com_2015} data set provides manually curated data of cultural and physical features of the world. Natural Earth data is especially useful at higher zoom levels. The imported Natural Earth data results in more than 100 tables, but only a few
-are relevant for our use case. The \autoref{data_sources_table} show which Natural Earth tables are used for which layers in the vector tiles.\\\\
-The following data sets are used from Natural Earth:
-
-\begin{itemize}
-\item Country and administrative borders including disputed borders on lower zoom levels of the admin layer
-\item Major lakes and simplified ocean polygons on lower zoom levels of the water layer
-\item Label ranks of big cities of the layer place\_label
-\end{itemize}
-
-\begin{table}[H]
-\centering
-    \begin{tabular}{lll}
-    \hline
-    Table Name                                          & Layer Name & Geometry Type \\
-    \hline
-    ne\_110m\_admin\_0\_boundary\_lines\_land           & admin & linestring    \\
-    ne\_50m\_admin\_0\_boundary\_lines\_land         & admin & linestring    \\
-    ne\_50m\_admin\_1\_states\_provinces\_lines            & admin & linestring    \\
-    ne\_10m\_admin\_1\_states\_provinces\_lines\_shp            & admin & linestring    \\
-    ne\_10m\_admin\_0\_boundary\_lines\_land & admin & linestring    \\
-    ne\_10m\_admin\_0\_boundary\_lines\_disputed\_areas & admin & linestring \\
-    ne\_110m\_ocean                                       & water & polygon       \\
-    ne\_110m\_lakes                                     & water & polygon       \\
-    ne\_50m\_ocean                                        & water & polygon       \\
-    ne\_50m\_lakes                                      & water & polygon       \\
-    ne\_10m\_ocean                                      & water & polygon       \\
-    ne\_10m\_lakes                                      & water & polygon       \\
-    ne\_10m\_populated\_places                             & place\_label & point       \\
-    \end{tabular}
-    \caption{Tables imported from Natural Earth}
-    \label{data_sources_table}
-\end{table}
-\clearpage
-
 \section{Architecture}
 
-The architecture of the project is structured into the import phase where the ETL process happens, the changed tile detection phase and the export phase where the vector tiles are rendered. This section describes every component and how it is related to others.
-
-\subsection{Import Components}
-
-The import components take care of importing \osm{} data, external data and SQL views, triggers, indices and functions to help with the rendering and changed tiles detection process.
-
-\subsubsection{Import External}
-
-The \texttt{import-external} component is responsible for importing all data that is not mapped directly from \osm{} into the PostGIS database.
+The architecture of the project is structured into the import phase (ETL process), the changed tiles detection phase  and the export phase (render vector tiles). This section describes the components and their purpose.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=1.0\textwidth]{images/import-external-detail-flow-diagram}
-  \caption{Barrier layer Schema}
+  \includegraphics[width=1.0\textwidth]{images/etl_components}
+  \caption{Workflow structured into components}
+\end{figure}
+
+\subsection{Import Components}
+
+The import components take care of importing \osm{} and other external data sources such as SQL views, triggers, indices and functions to help with the rendering and changed tiles detection process.
+
+\subsubsection{Import External}
+
+The \textbf{import-external} component is responsible for importing all data that is not mapped directly from \osm{} into the PostGIS database.
+The \autoref{import_external_diagram} shows the external data sources and programs used to import the data into the PostGIS database.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/architecture/import_external_diagram}
+  \caption{Import of external data sources}
   \label{import_external_diagram} 
 \end{figure}
 
-The \autoref{import_external_diagram} shows the external data sources and the bash script which imports it into the database.
-
 \subsubsection{Import OSM}
 
-The \texttt{import-osm} component will take the first PBF file in the ./import folder and will import it into PostGIS. After that it will update the scaleranks using Natural Earth data from \texttt{import-external} to update the scaleranks and will create generalized tables based off the imported data. The data is imported using imposm3 diff mode and can take up to 14hrs for the entire planet file.
+The \texttt{import-osm} component will take the first PBF file in the import folder and will import it into PostGIS. After that it will update the scaleranks using Natural Earth data from \texttt{import-external} to update the scaleranks and create generalized tables based off the imported data. The data is imported using imposm3 diff mode and can take up to 14 hours for the entire planet file.
 
 \begin{figure}[H]
   \centering
@@ -118,7 +38,7 @@ The \texttt{import-osm} component will take the first PBF file in the ./import f
 
 \subsubsection{Import SQL}
 
-The \texttt{import-sql} component is responsible to import the SQL used for the different layers. It will also generate SQL code for different classifications and code to detect changed tiles and table management commands for different layers.
+The \textbf{import-sql} component is responsible to provision the SQL used for the different layers. It also generates SQL code for different classifications and code to detect changed tiles as well as table management commands for different layers.
 
 \begin{figure}[H]
   \centering
@@ -132,7 +52,7 @@ The changed tile detection components handle creating an \osm{} Diff file based 
 
 \subsubsection{Update OSM Diff}
 
-The \texttt{update-osm-diff} component takes the planet file as input and creates an \osm{} Diff file containing all the changes happened since the planet file was downloaded.
+The \textbf{update-osm-diff} component takes the planet file as input and creates an \osm{} Diff file containing all the changes happened since the planet file was downloaded.
 
 \begin{figure}[H]
   \centering
@@ -142,7 +62,7 @@ The \texttt{update-osm-diff} component takes the planet file as input and create
 
 \subsubsection{Import OSM Diff}
 
-The \texttt{import-osm-diff} component takes the \osm{} Diff file created with the \texttt{update-osm-diff} component as input and imports all changes into the database.
+The \texttt{import-osm-diff} component takes the \osm{} diff file created with the \texttt{update-osm-diff} component as input and imports all changes into the database.
 
 \begin{figure}[H]
   \centering
@@ -152,7 +72,7 @@ The \texttt{import-osm-diff} component takes the \osm{} Diff file created with t
 
 \subsubsection{Merge OSM Diff}
 
-The \texttt{merge-osm-diff} component takes the old planet file and the latest diff file as input and merges all changes into the old planet file. Additionally the timestamp of the planet file gets updated in order to get a correct diff file when the \texttt{update-osm-diff} process runs the next time.
+The \textbf{merge-osm-diff} component takes the old planet file and the latest diff file as input and merges all changes into the old planet file. Additionally the timestamp of the planet file is updated in order to have a correct diff file when the \textbf{update-osm-diff} process runs the next time.
 
 \begin{figure}[H]
   \centering
@@ -162,7 +82,7 @@ The \texttt{merge-osm-diff} component takes the old planet file and the latest d
 
 \subsubsection{Changed Tiles}
 
-The \texttt{changed-tiles} component is responsible for executing the changed tiles SQL logic and store the list of changed tiles in a text file using pgclimb. The actual logic for detecting the changed tiles is in the \texttt{import-sql} component.
+The \textbf{changed-tiles} component is responsible for executing the changed tiles SQL logic and store the list of changed tiles in a text file using pgclimb. The actual logic for detecting the changed tiles is contained in the \textbf{import-sql} component.
 
 \begin{figure}[H]
   \centering
@@ -195,7 +115,7 @@ Generate-jobs will output the jobs as individual JSON objects to stdout. A tool 
 
 \subsubsection{Export}
 
-The \texttt{export} component is responsible for rendering vector tiles using osm2vectortiles.tm2source and the \texttt{postgis} component. Exports can be run together with a message queue like RabbitMQ or standalone for smaller extracts where it is not necessary to divide the work into several parts.
+The \textbf{export} component is responsible for rendering vector tiles using osm2vectortiles.tm2source and the \textbf{postgis} component. Exports can be run together with a message queue like RabbitMQ or standalone for smaller extracts where it is not necessary to divide the work into several parts.
 
 \begin{figure}[H]
   \centering
@@ -205,7 +125,7 @@ The \texttt{export} component is responsible for rendering vector tiles using os
 
 \subsubsection{Merge Jobs}
 
-The \texttt{merge-jobs} component is responsible for taking result messages from the queue, download the attached MBTiles file and merge it into the latest planet MBTiles file.
+The \textbf{merge-jobs} component is responsible for taking result messages from the queue, download the attached MBTiles file and merge it into the latest planet MBTiles file.
 
 \begin{figure}[H]
   \centering
@@ -217,72 +137,76 @@ The \texttt{merge-jobs} component is responsible for taking result messages from
 \newpage
 \section{Database and Layer Schema}\label{database-schema}
 
-The database schema is denormalized and has no relations. It is heavily optimized for fast reads and the primary and only use case of generating vector tiles from the PostGIS database.
+In this section the different layers and the database schema related to it are explained and justified. The database schema is denormalized and has no relations to fulfill the performance constraints of rendering.
+It is heavily optimized for fast reads since the only use case of the database schema is generating vector tiles from the PostGIS database.
+
+Each vector tile layer consists of several zoom level views using different data sources as explained in \autoref{zoom_level_views}.
 
 %------------------------------------------------------
-\subsection{Aeroways and Airports}
+\subsection{Water}
+
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    The layer \textbf{aeroway} contains infrastructure regarding air travel. The most common features are airports and their aprons, runways and taxiways. Since airports are big landmarks and all features are already present after zoom level 10. The layer consists of polgyons and linestrings (e.g. while runways are often polygons, taxiways are mostly linestrings).
-    The layer \textbf{airport\_label} contains labels (either points or centroid of polygons) of airports from airports since airports are important orientation points.
-    The \textbf{scalerank} field describes the importance of the airport based on the area and type of the airport.
-    The \textbf{ref} field can either be the IATA, FAA, ICAO or other reference code for the airport.
+    The \textbf{water} layer contains bodies of water like the ocean, lakes or large rivers.
+    Since water is so essential for the quality of the map different data sources as shown in \autoref{water_data_sources_table} are used on different zoom levels. 
+    The \textbf{water\_label} layer shows the labels of lake bodies (not marine waters). Due to the costly calculation of centroid of very large polygons the \textbf{water\_point} table is precalculated ahead of rendering time.
+    \\\\
+    Coastlines in \osm{} are sensitive for change and
+    the OpenStreetMapData\cite{14_openstreetmapdata.com_2015}
+    project takes care to repair broken coastlines and checks it thoroughly. The OpenStreetMapData project also takes care of splitting the ocean into several smaller tiled polygons which results in better database performance.
+    In the \textbf{water} layer simplified ocean polygons from \textbf{osm\_ocean\_polygon\_gen0} are used in zoom level 4 and the original polygons from \textbf{osm\_ocean\_polygon} are used from zoom level 5 up to zoom level 14.
+    \\\\
+    For choosing the right water bodies at low zoom levels the NaturalEarth data set \cite{16_naturalearthdata.com_2015} provides manually curated data of physical features such as water in the Shapefile format. For lakes and ocean water polygons different resolutions (1:110M, 1:50M and 1:10M) were chosen for zoom level 0 to 4.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
-    \vspace{-20pt}
+    \vspace{-10pt}
     \begin{figure}[H]
-      \centering
-      \includegraphics[width=1\textwidth]{images/schema/aeroway_example}
-      \caption{Aerowaya and airport label layer of Zurich airport}
+      \includegraphics[width=1\textwidth]{images/schema/water_example}
+      \caption{Ocean and water polygons in southern Europe}
     \end{figure}
-\end{minipage}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{images/schema/aeroway}
-  \caption{Aeroway layer}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{images/schema/airport}
-  \caption{Airport label layer}
-\end{figure}
-
-%------------------------------------------------------
-\subsection{Barriers}
-
-\noindent\begin{minipage}[t]{0.48\linewidth}
-    \vspace{0pt}
-    The layer \textbf{barrier\_line} contains barriers that block a way or path. Common features are structural walls, fences or access controls like bicycle barriers and gates. Man made objects like piers or natural barriers like a cliff are contained as well in the \textbf{barrier\_line} layer. Despite the layer name barriers can not only be linestrings (e.g. walls) but polygons as well (e.g. piers). Barriers are only relevant at the highest zoom level 14.
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.48\linewidth}
-    \begin{figure}[H]
-      \includegraphics[width=1\textwidth]{images/schema/piers_example}
-      \caption{Barrier line layer with piers at Lake Zurich}
-    \end{figure}
-\end{minipage}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{images/schema/barrier_line}
-  \caption{Barrier layer Schema}
-\end{figure}
-
-%------------------------------------------------------
-\subsection{Road and Road Labels}
-
-\noindent\begin{minipage}[t]{0.48\linewidth}
-    \vspace{0pt}
-    Roads are one of the most essential features in maps. Roads are present across all zoom levels filtered by their importance. The \textbf{road} and \textbf{road\_label} layer query the data from the \textbf{road\_geometry} table where both polygons and linestrings are present.
     
-    The \textbf{road\_label} layer consists of linestrings that have a name assigned and are also encoded as linestrings in the vector tile. The client renderer then takes care of putting the road label across the road linestring.
+    \begin{table}[H]
+    \centering
+        \scalebox{0.9}{
+            \begin{tabular}{lll}
+            \hline
+            Table Name                    & Source            \\
+            \hline
+            ne\_110m\_ocean               & NaturalEarth      \\
+            ne\_110m\_lakes               & NaturalEarth      \\
+            ne\_50m\_ocean                & NaturalEarth      \\
+            ne\_50m\_lakes                & NaturalEarth      \\
+            ne\_10m\_ocean                & NaturalEarth      \\
+            ne\_10m\_lakes                & NaturalEarth      \\
+            osm\_ocean\_polygon\_gen0     & OpenStreetMapData \\
+            osm\_ocean\_polygon           & OpenStreetMapData \\
+            \end{tabular}
+        }
+        \caption{Tables from external data sources for water layer}
+        \label{water_data_sources_table}
+    \end{table}
+\end{minipage}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/water}
+  \caption{Water layer schema}
+\end{figure}
+    
+
+%------------------------------------------------------
+\subsection{Roads}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    Roads are one of the most essential features in maps. Roads are present across all zoom levels filtered by type. At the lowest zoom levels only motorways are shown while at higher zoom levels residential and service roads are rendered as well. Due to the complex hierarchy of rows each zoom level contains custom filters what to display. The \textbf{road} and \textbf{road\_label} layer query the data from the \textbf{road\_geometry} table where both linestrings and polygons (for bigger avenues and squares) are present.
+    The \textbf{road\_label} layer consists of linestrings with a road name assigned and the vector tile client then takes care of drawing the road label text across the road linestring. To avoid having too many labels on roads (especially relevant for motorway signs) the roads are grouped by their vicinity and ranked by their length to reduce label density.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
+    \vspace{-10pt}
     \begin{figure}[H]
       \includegraphics[width=1\textwidth]{images/schema/road_example}
       \caption{Road layer around Paris}
@@ -295,38 +219,17 @@ The database schema is denormalized and has no relations. It is heavily optimize
   \caption{Road layer schema}
 \end{figure}
 
-%------------------------------------------------------
-\subsection{Water}
 
-
-\noindent\begin{minipage}[t]{0.48\linewidth}
-    \vspace{0pt}
-    The \textbf{water} layer contains all bodies of water be it ocean, lakes or large rivers.
-    Since water is so essential for the quality of the map a variety of different sources is used on different zoom levels. At low zoom levels 0 to 4 already generalized NaturalEarth data is used for both ocean and lake polygons. On zoom level 5 to 14 water data imported from \osm{} and split ocean polygons from OpenStreetMap data are used. Very large water polygons are split due to performance reasons.
-    The \textbf{water\_label} layer shows the labels of lake bodies (not marine waters). Those are precalculated from the centroid of the water polygon in the \textbf{water\_point} table.
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.48\linewidth}
-    \vspace{-20pt}
-    \begin{figure}[H]
-      \includegraphics[width=1\textwidth]{images/schema/water_example}
-      \caption{Tiled ocean and water bodies in Europe at zoom level 5}
-    \end{figure}
-\end{minipage}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{images/schema/water}
-  \caption{Water layer schema}
-\end{figure}
 
 %------------------------------------------------------
 \subsection{Buildings and Housenumbers}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    Building are polygons for a building structure such as a house. Buildings only appear on the highest zoom level 14 with the exceptions of very large buildings already appearing at zoom level 13.
-    Some buildings are also tagged with a housenumber (the housenumber might also be a single point in OSM). These housenumber labels are rendered in the \textbf{housenum\_label} layer. Housenumber only appear at zoom level 14.
+    Buildings are polygons for a building structures such as a house. Buildings only appear on the highest zoom level 14 with the exceptions of large buildings already appearing at zoom level 13. Buildings are one of the most frequent features at high zoom levels but are for the view of a city or rural area.
+    
+    The \textbf{housenum\_label}  layer contains buildings or single points tagged with a housenumber. Housenumbers only appear on zoom level 14.
+
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -348,7 +251,10 @@ The database schema is denormalized and has no relations. It is heavily optimize
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    The \textbf{admin} layer contains the linestrings of administrative boundaries such as countries, states or provinces. Since a different level of detail is required at different zoom levels NaturalEarth data is used at very low zoom levels for countries and very large provinces while at higher zoom levels the more accurate \osm{} data is used. Boundaries are treated as linestrings because borders often break in \osm{} and can then no longer be reconstructed as polygons. Therefore it is safer to work with them as linestrings even thought this provides less options for e.g. coloring different administrative areas.
+    The \textbf{admin} layer contains the linestrings of administrative boundaries such as countries, states or provinces.
+    Boundaries are treated as linestrings because borders often break in \osm{} and can no longer be reconstructed as polygons. Therefore it is safer to work with linestrings even though this provides less cartographic styling options.
+    \\\\
+    Since a different level of detail is required at different zoom levels the cultural data set from  Natural Earth \cite{16_naturalearthdata.com_2015} has been used at low zoom levels for boundaries of countries, provinces and disputed areas while at higher zoom levels the more accurate \osm{} data is used.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -372,11 +278,10 @@ The database schema is denormalized and has no relations. It is heavily optimize
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    The layer \textbf{landuse} of contains polygons of specially zoned land. The most frequent 
+    The layer \textbf{landuse} contains polygons of specially zoned land. The most frequent 
     features inside \textbf{landuse} are wood areas as well as national parks, swamps, commercial, industrial and military zones.
     Very large polygons are split into several pieces into the \textbf{landuse\_split\_polygon} table and large polygons are generalized
-    for lower zoom levels. The Polygons on the \textbf{landuse} layer are filtered by their covered area depending on the zoom level with only
-    the largest polygons being shown at low zoom levels.
+    for lower zoom levels. The Polygons on the \textbf{landuse} layer are filtered by their covered area depending on the zoom level so that at low zoom levels only the biggest polygons are shown.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -418,14 +323,13 @@ The database schema is denormalized and has no relations. It is heavily optimize
 \end{figure}
 
 %---------------------------------
-\subsection{Country and State Labels}
+\subsection{Countries and States}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    Names and placement of country and state labels are very important.
-    Because it is difficult to ensure quality of these features when importing directly from \osm{} the countries and states are pulled from \osm{} data once
-    and get the \textbf{scalerank} assigned by hand to ensure label
-    importance ranking and label placement are as good as possible.
+    The placement and importance of labels of countries, states and seas matters\cite{12_axismaps.github.io_2015} and is important to get right. 
+    Because it is difficult to ensure the quality of these features when importing directly from \osm{}, the labels of countries and states are curated by hand.
+    Data from the overpass API \cite{13_wiki.openstreetmap.org_2015} is converted into GeoJSON and manually edited and enhanced with a label rank to get the best possible label placement and importance ranking.
     This effort is worth it because country and state data changes
     at infrequent intervals.
     Country labels are not present on all zoom levels and are filtered based
@@ -447,19 +351,18 @@ The database schema is denormalized and has no relations. It is heavily optimize
 \end{figure}
 
 %------------------------------------------------------
-\subsection{Place Labels}
+\subsection{Places}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    Place labels help for intermediate orientation. It is important to show only
-    world cities at low zoom levels and then gradually show more and more local places. Filtering happens over the \textbf{scalerank} and \textbf{localrank}
-    fields in the vector tiles. Since place labels are very delicate and important
+    Place labels are vital for building nice maps with good text hierarchy.
+    It is important to show only world cities at low zoom levels and then gradually show more and more local places. Filtering happens via the \textbf{scalerank} and \textbf{localrank} fields in the vector tiles. The \textbf{scalerank} field originates from the \textbf{ne\_10m\_populated\_places} table from NaturalEarth and is merged into the \textbf{place\_point} table. Most place labels are mapped as point in \osm{} except for residential districts and islands for which the centroid of the geometry is used as label point.
+    Since place labels are very delicate and important
     every zoom level has custom filters for which places are relevant.
     The rank calculation for places is explained in \autoref{place_label_rank_calc}.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
-    \vspace{-20pt}
     \begin{figure}[H]
       \includegraphics[width=1\textwidth]{images/schema/place_example}
       \caption{Important place labels in Europe}
@@ -468,6 +371,110 @@ The database schema is denormalized and has no relations. It is heavily optimize
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=1\textwidth]{images/schema/place_label}
-  \caption{Place label layer }
+  \includegraphics[width=0.8\textwidth]{images/schema/place_label}
+  \caption{Place label layer}
+\end{figure}
+
+%------------------------------------------------------
+\subsection{Aeroways and Airports}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    The layer \textbf{aeroway} contains infrastructure regarding air travel. The most common features are airports and their aprons, runways and taxiways. Airports are big landmarks and therefore all features are already present after zoom level 10. The layer consists of polygons and linestrings because runways are often polygons, while taxiways are mostly linestrings.
+    The layer \textbf{airport\_label} contains labels of airports (either a point or the centroid of the airport polygon) since airports are important orientation points. The \textbf{scalerank} field describes the importance of the airport based on the covered area and type.
+    Airports usually have official abbreviations (either the IATA, FAA, ICAO or custom reference code) that are stored in the \textbf{ref} field.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-20pt}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{images/schema/aeroway_example}
+      \caption{Aeroway and airport label layer of Zurich airport}
+    \end{figure}
+\end{minipage}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/aeroway}
+  \caption{Aeroway layer}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/airport}
+  \caption{Airport label layer}
+\end{figure}
+
+%------------------------------------------------------
+\subsection{Barriers}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    The layer \textbf{barrier\_line} contains barriers that block a way or path. Common features are structural walls, fences or access controls like bicycle barriers and gates. Man made objects like piers or natural barriers like a cliff are contained as well in the \textbf{barrier\_line} layer. Barriers are quite a detailed information and are therefore only relevant at the highest zoom level 14.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \begin{figure}[H]
+      \includegraphics[width=1\textwidth]{images/schema/piers_example}
+      \caption{Barrier line layer with piers}
+    \end{figure}
+\end{minipage}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/barrier_line}
+  \caption{Barrier layer}
+\end{figure}
+
+%------------------------------------------------------
+\subsection{Seas and Bays}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    For the oceans, large seas and bays having a curved label along the sea body is advantageous because the label does not interfere with other labels like as places.
+    Since the seas are not available as polygons these label linestrings cannot be calculated but had to be drawn by hand. For the 100+ most important seas and bays custom linestrings to match the body of the water have been drawn. The metadata still originates from \osm{} but the geometries are custom. Since these natural features do not change this does not pose a problem. The linestrings are filtered ascending for the upper zoom levels based on the \textbf{rank} field and are only shown at low zoom levels 0 to 6.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-15pt}
+    \begin{figure}[H]
+      \includegraphics[width=1\textwidth]{images/schema/marine_label_example}
+      \caption{Marine label of Mediterranean Sea}
+    \end{figure}
+\end{minipage}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/marine_label}
+  \caption{Marine label layer}
+\end{figure}
+
+
+
+
+
+
+%------------------------------------------------------
+\subsection{Mountain Peaks}
+
+Mountain peaks are points tagged as volcanoes and mountains with a name and elevation. Because clients only have limited logic capabilities the elevation is calculated in both meters and feet.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/mountain_peak}
+  \caption{Mountain peak label layer}
+\end{figure}
+
+%------------------------------------------------------
+\subsection{Rail Stations}
+
+Rail stations include railway, metro and tram stations. Since these
+public transport features are usually styled differently than other point of
+interests they are contained in a separate \textbf{rail\_station\_label\_layer}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/rail_station}
+  \caption{Rail station label layer}
 \end{figure}

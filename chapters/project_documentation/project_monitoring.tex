@@ -2,28 +2,50 @@
 
 \section{Code Statistics}
 
+\autoref{lines_of_code} shows how many lines of code were written in which language. A lot of SQL code is generated during the import-sql process. This code uses YAML definitions to generate the SQL functions and tables. 
 
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\textbf{Language}   & \multicolumn{1}{l}{\textbf{Lines of Code}} \\ \hline
+SQL                     & 1155                              \\
+Bash                    & 836                               \\
+Python                  & 728                               \\
+Javascript              & 209                               \\
+YAML                    & 3275                              \\
+\noindent\hspace*{8mm}%
+Vector Tile Definition  & 1160                              \\
+\noindent\hspace*{8mm}%
+Class Definition        & 1928                              \\
+\noindent\hspace*{8mm}%
+Docker Compose File     & 169                               \\
+\noindent\hspace*{8mm}%
+Other                   & 18
+\end{tabular}
+\caption{Lines of Code per language}
+\label{lines_of_code}
+\end{table}
 
 \section{Estimated Time vs Actual Time}
 
-Our estimations were too optimistic. Due to the extensive
-training period required to get started in a GIS environment
-the actual time was more than originally estimated.
-
+The estimations turned out to be no very realistic as some releases took longer than intended. Especially the releases 1.4 and 1.5 took a lot more time than planned.
 
 \begin{table}[H]
 \centering
     \begin{tabular}{lll}
     \textbf{Sprint}        & \textbf{Estimated} & \textbf{Actual} \\
      \hline
-    v1.1  & 80     & 16        \\
-    v1.2  & 80     & 55        \\
-    v1.3  & 80     & 50        \\
-    v1.4  & 80     & 102       \\
-    v1.5  & 80     & 106         \\
-    v1.6  & 80     & 53        \\
+    v1.1    & 80     & 87        \\
+    v1.2    & 80     & 99        \\
+    v1.3    & 80     & 98        \\
+    v1.4    & 100    & 121       \\
+    v1.4.1  & 40     & 53       \\
+    v1.4.2  & 40     & 52       \\
+    v1.5    & 100    & 126       \\
+    v2.0    & 80     & 87        \\
+    v2.1    & 80     & 89        \\
     \hline
-    \textbf{Total} & 720 & 720 \\
+    \textbf{Total} & 720 & 812   \\
     \end{tabular}
     \caption{Estimated vs actual time for different sprints}
 \end{table}
@@ -31,21 +53,24 @@ the actual time was more than originally estimated.
 
 \section{Time per Person}
 
-Both contributors invested about the same amount of time.
+The invested time per person was very balanced. This was thanks to the agreement that both contributors meet three times a week in school to work together on the project. 
 
 \begin{table}[H]
 \centering
     \begin{tabular}{llll}
     \textbf{Sprint}  & \textbf{Lukas Martinelli} & \textbf{Manuel Roth} & \textbf{Total} \\
     \hline
-    v1.1    & 11               & 9           & 20    \\
-    v1.2    & 22               & 21          & 43    \\
-    v1.3    & 25               & 23          & 48    \\
-    v1.4    & 56               & 65          & 121   \\
-    v1.5    & 77               & 75          & 152   \\
-    v1.6    & 27               & 21          & 48    \\
+    v1.1    & 43               & 44          & 87    \\
+    v1.2    & 47               & 52          & 99    \\
+    v1.3    & 50               & 48          & 98    \\
+    v1.4    & 62               & 59          & 121   \\
+    v1.4.1  & 28               & 25          & 53   \\
+    v1.4.2  & 26               & 26          & 52   \\
+    v1.5    & 62               & 64          & 126   \\
+    v2.0    & 43               & 44          & 87    \\
+    v2.1    & 46               & 43          & 89    \\
     \hline
-    \textbf{Total}          & 245              & 248         & 493   \\
+    \textbf{Total}          & 407              & 405         & 812   \\
     \end{tabular}
     \caption{Time for each contributor for sprints}
 \end{table}
