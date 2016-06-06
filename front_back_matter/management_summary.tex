@@ -11,21 +11,42 @@
 %---------------------------------------------------
 \subsection*{Situation}\label{introduction}
 
-Web and mobile mapping is moving towards vector tiles. The osm2vectortiles project provides a viable alternative for all developers and cartographers that want to be independent from 3rd party services and build their own services. To be truly useful and gain greater adoption the project's quality needs to be improved and the process scaled to the entire planet and make it updatable.
+Digital mapping is moving towards vector tiles to create more interactive and resolution independent cartography. Instead of delivering the image of the map to the client, the vector representation of the data is sent to the map client.\\
+
+Several vector tile providers such as Mapbox open the process to create vector tiles but still own the vector tile data. Developers and cartographers who want to be independent from 3rd party services or have limited internet access in their applications require free and global vector tiles to create the next generation of map applications.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/osm_bright}
+\caption*{Map rendered from \osmvt{} vector tiles}
+\end{figure}
 
 %---------------------------------------------------
-\newpage
 \subsection*{Approach}
 
-The process to improve OSM2VectorTiles has been completly open and the feedback of the community was the cornerstone for improving the project. Based off the experience from the successor study thesis components have been refined and made fit for global usage.
+The \osmvt{} project strives to push mapping forward by providing free and high quality vector tiles with no strings attached. To make developers independent from the providers
+the vector tiles can be downloaded and hosted using a tileserver of their choice. This approach differs from all other vector tile providers and will enable new possibilities for desktop and mobile developers creating offline map applications.\\
+
+The process to improve \osmvt{} is completely open and the feedback and requirements of the
+community have been the cornerstone for improving the project with most feature requests and
+bug reports coming from actual users.
 
 %---------------------------------------------------
 \subsection*{Result}
 
-The result of this thesis are downloadable vector tiles for the entire world and extracts for over 200 countries and 400 cities downloadable from the project website. The workflow to create the vector tiles is available for everyone to use and is meant to be adapter for other projects that create vector tiles on a global scale.
+The result of this thesis are downloadable vector tiles for the entire world and extracts for over 200 countries and 600 cities provided on the project website \url{http://osm2vectortiles.org}. The vector tiles are compatible with the newest Mapbox Streets v7 vector tiles to provide an easy integration path for existing projects and can be used from a variety of existing map clients and libraries.\\
 
-Over 200 bugs have been fixed and 23 features have been added, most of them requested and detected by the community. The resut of this thesis is not only a thesis and code but a living OSS project that can be maitained and used in the future with real adopters already using it.
+The workflow to create the vector tiles is available for everyone to use and is meant to be adapted by other projects. The workflow can be scaled linearly by adding more worker machines and is a unique approach to rendering offline vector tiles with global coverage.\\
 
+The vector tiles can be kept up to data by continuously applying the latest \osm{} changes and rerendering only the parts of the planet that are affected by those changes. This enables to provide downloadable vector tiles but still keep the data up to date.\\
+
+The \osmvt{} project is already used in several real world projects and by pushing the project further the result of this thesis is a living open source project that hopefully will survive this bachelor thesis.
+    
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/project_website}
+\caption*{Project website \osmvt{} providing docs, downloads and examples}
+\end{figure}
 
 \endgroup
 

@@ -28,7 +28,7 @@ The \autoref{import_external_diagram} shows the external data sources and progra
 
 \subsubsection{Import OSM}
 
-The \texttt{import-osm} component will take the first PBF file in the import folder and will import it into PostGIS. After that it will update the scaleranks using Natural Earth data from \texttt{import-external} to update the scaleranks and create generalized tables based off the imported data. The data is imported using imposm3 diff mode and can take up to 14 hours for the entire planet file.
+The \texttt{import-osm} component takes the first PBF file in the import folder and imports it into PostGIS. After that it updates the scaleranks using Natural Earth data from \texttt{import-external} to update the scaleranks and create generalized tables based off the imported data. The data is imported using imposm3 diff mode and can take up to 14 hours for the entire planet file.
 
 \begin{figure}[H]
   \centering
@@ -38,7 +38,7 @@ The \texttt{import-osm} component will take the first PBF file in the import fol
 
 \subsubsection{Import SQL}
 
-The \textbf{import-sql} component is responsible to provision the SQL used for the different layers. It also generates SQL code for different classifications and code to detect changed tiles as well as table management commands for different layers.
+The \textbf{import-sql} component is responsible for provisioning the SQL used in the different layers. It also generates SQL code for different classifications and code to detect changed tiles as well as table management commands for different layers.
 
 \begin{figure}[H]
   \centering
@@ -97,14 +97,14 @@ is needed to scale the process on to multiple hosts and process. The central com
 
 \subsubsection{Generate Jobs}
 
-The \texttt{generate-jobs} component is responsible creating JSON jobs consumed by the \texttt{export} component. It supports two types of jobs:
+The \texttt{generate-jobs} component is responsible for creating JSON jobs consumed by the \texttt{export} component. It supports two types of jobs:
 
 \begin{itemize}
   \item \textbf{Pyramid}: Job of rendering a tile pyramid (e.g. from z8 all down to z14). Used for initial rendering of the world.
   \item \textbf{List}: Batch jobs of list of tiles to be rendered grouped by data locality. Used for rendering changed tiles.
 \end{itemize}
 
-Generate-jobs will output the jobs as individual JSON objects to stdout. A tool like \texttt{pipecat} can be used to schedule them on your job server.
+Generate-jobs will output the jobs as individual JSON objects to stdout. A tool like \texttt{pipecat} can be used to schedule them on the job server.
 
 \begin{figure}[H]
   \centering
@@ -149,15 +149,15 @@ Each vector tile layer consists of several zoom level views using different data
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
     The \textbf{water} layer contains bodies of water like the ocean, lakes or large rivers.
-    Since water is so essential for the quality of the map different data sources as shown in \autoref{water_data_sources_table} are used on different zoom levels. 
+    Since water is essential to the quality of the map different data sources as shown in \autoref{water_data_sources_table} are used on different zoom levels. 
     The \textbf{water\_label} layer shows the labels of lake bodies (not marine waters). Due to the costly calculation of centroid of very large polygons the \textbf{water\_point} table is precalculated ahead of rendering time.
     \\\\
     Coastlines in \osm{} are sensitive for change and
     the OpenStreetMapData\cite{14_openstreetmapdata.com_2015}
-    project takes care to repair broken coastlines and checks it thoroughly. The OpenStreetMapData project also takes care of splitting the ocean into several smaller tiled polygons which results in better database performance.
-    In the \textbf{water} layer simplified ocean polygons from \textbf{osm\_ocean\_polygon\_gen0} are used in zoom level 4 and the original polygons from \textbf{osm\_ocean\_polygon} are used from zoom level 5 up to zoom level 14.
+    project takes care of repairing broken coastlines and checking it thoroughly. The OpenStreetMapData project also takes care of splitting the ocean into several smaller tiled polygons which results in better database performance.
+    The \textbf{water} layer uses simplified ocean polygons from \textbf{osm\_ocean\_polygon\_gen0} on zoom level 4 and the original polygons from \textbf{osm\_ocean\_polygon} are used from zoom level 5 up to zoom level 14.
     \\\\
-    For choosing the right water bodies at low zoom levels the NaturalEarth data set \cite{16_naturalearthdata.com_2015} provides manually curated data of physical features such as water in the Shapefile format. For lakes and ocean water polygons different resolutions (1:110M, 1:50M and 1:10M) were chosen for zoom level 0 to 4.
+    For choosing the right water bodies at low zoom levels the NaturalEarth data set \cite{16_naturalearthdata.com_2015} provides manually curated data of physical features such as water in the Shapefile format. For lakes and oceans water polygons of different resolutions (1:110M, 1:50M and 1:10M) were chosen on zoom level 0 to 4.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -201,7 +201,7 @@ Each vector tile layer consists of several zoom level views using different data
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    Roads are one of the most essential features in maps. Roads are present across all zoom levels filtered by type. At the lowest zoom levels only motorways are shown while at higher zoom levels residential and service roads are rendered as well. Due to the complex hierarchy of rows each zoom level contains custom filters what to display. The \textbf{road} and \textbf{road\_label} layer query the data from the \textbf{road\_geometry} table where both linestrings and polygons (for bigger avenues and squares) are present.
+    Roads are one of the most essential features in maps. Roads are present across all zoom levels filtered by type. At the lowest zoom levels only motorways are shown while at higher zoom levels residential and service roads are rendered as well. Due to the complex hierarchy of roads in \osm{} each zoom level contains custom filters to control which kind of roads get displayed on which zoom level. The \textbf{road} and \textbf{road\_label} layer, query the data from the \textbf{road\_geometry} table where both linestrings and polygons (for bigger avenues and squares) are present.
     The \textbf{road\_label} layer consists of linestrings with a road name assigned and the vector tile client then takes care of drawing the road label text across the road linestring. To avoid having too many labels on roads (especially relevant for motorway signs) the roads are grouped by their vicinity and ranked by their length to reduce label density.
 \end{minipage}
 \hfill
@@ -226,7 +226,7 @@ Each vector tile layer consists of several zoom level views using different data
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    Buildings are polygons for a building structures such as a house. Buildings only appear on the highest zoom level 14 with the exceptions of large buildings already appearing at zoom level 13. Buildings are one of the most frequent features at high zoom levels but are for the view of a city or rural area.
+    Buildings are polygons such as houses or skyscrapers. They only appear on the highest zoom level 14 with the exception of large buildings already appearing at zoom level 13. Buildings are one of the most frequent features at high zoom levels.
     
     The \textbf{housenum\_label}  layer contains buildings or single points tagged with a housenumber. Housenumbers only appear on zoom level 14.
 
@@ -247,7 +247,7 @@ Each vector tile layer consists of several zoom level views using different data
 \end{figure}
 
 %------------------------------------------------------
-\subsection{Administrative Borders}
+\subsection{Administrative Boundaries}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
@@ -281,7 +281,7 @@ Each vector tile layer consists of several zoom level views using different data
     The layer \textbf{landuse} contains polygons of specially zoned land. The most frequent 
     features inside \textbf{landuse} are wood areas as well as national parks, swamps, commercial, industrial and military zones.
     Very large polygons are split into several pieces into the \textbf{landuse\_split\_polygon} table and large polygons are generalized
-    for lower zoom levels. The Polygons on the \textbf{landuse} layer are filtered by their covered area depending on the zoom level so that at low zoom levels only the biggest polygons are shown.
+    for lower zoom levels. The polygons in the \textbf{landuse} layer are filtered by area depending on the zoom level so that at low zoom levels only the biggest polygons are shown.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -304,8 +304,9 @@ Each vector tile layer consists of several zoom level views using different data
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
     A point of interest (POI) is a feature bound to a particular point of the map (e.g. churches, schools, tourist attractions, hotels, trees).
-    Not all POIs are relevant and to appear on the map, POIs are required to have at least a name or icon derived from the \textbf{type} field.
-    Since users shouldn't be overwhelmed with information on a map the field \textbf{localrank} contains an ascending importance rank which can be used by map clients to show important POIs first and very prominent POIs also have a scalerank based on their covered \textbf{area}. The rank calculation for POIs works very similar to place label ranking described in \autoref{place_label_rank_calc}.
+    Not all POIs mapped in \osm{} are relevant for a visual map. In order to appear on the map, POIs are required to have at least a name or icon derived by the \textbf{type} field.
+    \\\\
+    Users shouldn't be overwhelmed with too many point of interest icons. Therefore the field \textbf{localrank} contains an ascending importance rank which can be used by map clients to prioritize important POIs. Very prominent POIs additionally have a scalerank based on their covered \textbf{area}. The rank calculation for POIs works very similar to place label ranking described in \autoref{place_label_rank_calc}.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -329,7 +330,7 @@ Each vector tile layer consists of several zoom level views using different data
     \vspace{0pt}
     The placement and importance of labels of countries, states and seas matters\cite{12_axismaps.github.io_2015} and is important to get right. 
     Because it is difficult to ensure the quality of these features when importing directly from \osm{}, the labels of countries and states are curated by hand.
-    Data from the overpass API \cite{13_wiki.openstreetmap.org_2015} is converted into GeoJSON and manually edited and enhanced with a label rank to get the best possible label placement and importance ranking.
+    Data from the Overpass API \cite{13_wiki.openstreetmap.org_2015} is converted into GeoJSON and manually edited and enhanced with a label rank to get the best possible label placement and importance ranking.
     This effort is worth it because country and state data changes
     at infrequent intervals.
     Country labels are not present on all zoom levels and are filtered based
@@ -358,7 +359,7 @@ Each vector tile layer consists of several zoom level views using different data
     Place labels are vital for building nice maps with good text hierarchy.
     It is important to show only world cities at low zoom levels and then gradually show more and more local places. Filtering happens via the \textbf{scalerank} and \textbf{localrank} fields in the vector tiles. The \textbf{scalerank} field originates from the \textbf{ne\_10m\_populated\_places} table from NaturalEarth and is merged into the \textbf{place\_point} table. Most place labels are mapped as point in \osm{} except for residential districts and islands for which the centroid of the geometry is used as label point.
     Since place labels are very delicate and important
-    every zoom level has custom filters for which places are relevant.
+    every zoom level has custom filters to control which places are relevant.
     The rank calculation for places is explained in \autoref{place_label_rank_calc}.
 \end{minipage}
 \hfill
@@ -428,12 +429,15 @@ Each vector tile layer consists of several zoom level views using different data
 \end{figure}
 
 %------------------------------------------------------
-\subsection{Seas and Bays}
+\subsection{Oceans, large Lakes and Bays}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    For the oceans, large seas and bays having a curved label along the sea body is advantageous because the label does not interfere with other labels like as places.
-    Since the seas are not available as polygons these label linestrings cannot be calculated but had to be drawn by hand. For the 100+ most important seas and bays custom linestrings to match the body of the water have been drawn. The metadata still originates from \osm{} but the geometries are custom. Since these natural features do not change this does not pose a problem. The linestrings are filtered ascending for the upper zoom levels based on the \textbf{rank} field and are only shown at low zoom levels 0 to 6.
+    For oceans, large lakes and bays having a curved label along the body is advantageous because the label does not interfere with other labels like places.
+    \\
+    Since these features are not available as polygons the label linestrings cannot be calculated but had to be drawn by hand. For the 100+ most important lakes and bays custom linestrings have been drawn. The metadata still originates from \osm{} but the geometries are custom. Since these natural features do not change this does not pose a problem. 
+    \\
+    The linestrings are filtered ascending for the upper zoom levels based on the \textbf{rank} field and are only shown at low zoom levels 0 to 6.
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -450,15 +454,10 @@ Each vector tile layer consists of several zoom level views using different data
   \caption{Marine label layer}
 \end{figure}
 
-
-
-
-
-
 %------------------------------------------------------
 \subsection{Mountain Peaks}
 
-Mountain peaks are points tagged as volcanoes and mountains with a name and elevation. Because clients only have limited logic capabilities the elevation is calculated in both meters and feet.
+Mountain peaks are points tagged as mountains and volcanoes with a name and elevation. Because clients only have limited logic capabilities the elevation is calculated in both meters and feet.
 
 \begin{figure}[H]
   \centering
@@ -469,7 +468,7 @@ Mountain peaks are points tagged as volcanoes and mountains with a name and elev
 %------------------------------------------------------
 \subsection{Rail Stations}
 
-Rail stations include railway, metro and tram stations. Since these
+Rail stations include railways, metros and tram stations. Since these
 public transport features are usually styled differently than other point of
 interests they are contained in a separate \textbf{rail\_station\_label\_layer}.
 

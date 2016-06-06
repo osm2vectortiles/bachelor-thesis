@@ -3,7 +3,7 @@
 The main requirement regarding the content of the vector tiles is to be compatible with the vector tiles of Mapbox. This allows people to seamlessly switch to \osmvt{} and use the same visual styles created with Mapbox Studio. 
 
 \section{Approach}
-Mapbox's tileset is called Mapbox Streets. They provide detailed documentation on what data is included in the Mapbox Streets vector tiles. The documentation contains a layer reference which defines the attributes a layer can have. However the zoom levels at which data is shown is not documented publicly as well as the \osm{} tags and constraints describing the data. To be able to reverse engineer Mapbox Streets this information had to be retrieved by analyzing the official Mapbox Streets vector tiles at different zoom levels.\\
+Mapbox's tileset is called Mapbox Streets. Mapbox provides detailed documentation on what data is included in the Mapbox Streets vector tiles. The documentation contains a layer reference which defines the attributes a layer can have. However the zoom levels at which data is shown is not documented publicly as well as the \osm{} tags and constraints describing the data. To be able to reverse engineer Mapbox Streets this information had to be retrieved by analyzing the official Mapbox Streets vector tiles at different zoom levels.\\
 In an iterative and time consuming process the mapping and queries were continuously improved until the vector tile output matches the data from Mapbox Streets very closely.
 
 \section{Implementation}
@@ -12,14 +12,15 @@ This section describes the main components which needed to be implemented in ord
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{images/osm_to_vectortiles_detailed}
-\caption{Simplified process of data import to vector tile rendering}
+\caption{Simplified process from data import to vector tile rendering}
 \end{figure}
 
 \clearpage
 
 \subsection{Import Mapping}
 
-Imposm3 is used to import the \osm{} data into the Postgres database. Imposm3 expects a definition of which \osm{} tags should be mapped to which database tables. This definition is called import mapping. It mainly satisfies the following two purposes:
+To turn the semi-structured  data from \osm{} into a database schema and constructing actual geometries out of the \osm{} data model (\autoref{openstreetmap_data_model}) the \osmvt{} project is using Imposm3 as import tool  
+Imposm3 is used to import the \osm{} data into the PostgreSQL database. Imposm3 expects a definition of which \osm{} tags should be mapped to which database tables. This definition is called import mapping. It mainly satisfies the following two purposes:
 
 \paragraph{Filter data} The mapping allows to declare which data needs to be imported. This is very important since only a subset of all \osm{} data is included in the vector tiles. Therefore not all \osm{} data needs to be imported.
 
@@ -47,7 +48,7 @@ aero_polygon:
     - apron
     - helipad
 \end{yamlcode}
-\caption{Definition of a single table in the import mapping}
+\caption{YAML definition of a single table in the import mapping}
 \label{definition_of_mapping}
 \end{listing}
 \clearpage

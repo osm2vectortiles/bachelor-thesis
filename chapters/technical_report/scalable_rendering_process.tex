@@ -57,7 +57,7 @@ Each job therefore consists of $\sum_{i=0}^{6} 4^i = 5\,461$ tiles that need to 
 \end{figure}
 
 %-----------------------------------------
-\section{List Job}\label{list-job}
+\subsection{List Job}\label{list-job}
 
 It is important to be able to update distinct tiles to fix bugs later on or rerender all changed geometries. A list job is a batch job of tiles grouped together by their proximity and is created from a large list of tiles. The primary use case is to process the large list of changed tiles that need to be rerendered each week ($20\,000\,000$ to $30\,000\,000$ tiles).
 
@@ -145,7 +145,7 @@ To distribute across several hosts a distributed architecture (\autoref{distribu
   \label{distributed_rendering_architecture}
 \end{figure}
 
-\subsubsection{Dealing with Errors}
+\subsubsection*{Dealing with Errors}
 
 The message queue is using an acknowledge mechanism together with durable queues.
 This means if any process fails at any stage in the workflow (\textbf{render} or \textbf{merge}) the message is requeued and redelivered to the next worker.
