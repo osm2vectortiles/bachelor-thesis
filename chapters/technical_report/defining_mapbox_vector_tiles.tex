@@ -19,14 +19,15 @@ This section describes the main components which needed to be implemented in ord
 
 \subsection{Import Mapping}
 
-To turn the semi-structured  data from \osm{} into a database schema and constructing actual geometries out of the \osm{} data model (\autoref{openstreetmap_data_model}) the \osmvt{} project is using Imposm3 as import tool  
-Imposm3 is used to import the \osm{} data into the PostgreSQL database. Imposm3 expects a definition of which \osm{} tags should be mapped to which database tables. This definition is called import mapping. It mainly satisfies the following two purposes:
+Imposm3\cite{4_github_2015} is used to import the \osm{} data into the PostgreSQL database. Imposm3 expects a definition of which \osm{} tags should be mapped to which database tables. This import mapping definition satisfies the two purposes of filtering and mapping the data.
 
-\paragraph{Filter data} The mapping allows to declare which data needs to be imported. This is very important since only a subset of all \osm{} data is included in the vector tiles. Therefore not all \osm{} data needs to be imported.
+\paragraph{Filter data} The mapping allows to filter explicitly by tags and defines which data is imported. This is important since only a subset of all \osm{} data is included in the vector tiles and  therefore not all \osm{} data needs to be imported.
 
-\paragraph{Mapping data} The mapping allows to map \osm{} key/value pairs to a certain database table creating a structured and organized schema from unstructured data.\\
+\paragraph{Mapping data} The mapping allows to map \osm{} key/value pairs to a certain database table creating a structured and organized schema from semi-structured data. It takes care of constructing actual geometries from the \osm{} data model (\autoref{openstreetmap_data_model}).
 
-The example definition in listing \autoref{definition_of_mapping} maps \osm{} tags with the key \textbf{aeroway} and one of the values \textbf{runway}, \textbf{taxiway}, \textbf{apron} or \textbf{helipad} to the table \textbf{aero\_polygon}. The \textbf{aero\_polygon} table has the columns \textbf{id}, \textbf{geometry}, \textbf{timestamp} and \textbf{type}. During the import process Imposm3 transformes the \osm{} nodes, ways and relations to one of the geometry types point, linestring or polygon.
+\vskip 0.2in
+
+The example definition in listing \autoref{definition_of_mapping} maps \osm{} tags with the key aeroway and one of the values runway, taxiway, apron or helipad to the table \textbf{aero\_polygon}. The \textbf{aero\_polygon} table has the columns id, geometry, timestamp and type. During the import process Imposm3 transformes the \osm{} nodes, ways and relations to one of the geometry types point, linestring or polygon. The mapping is one of the most important aspects of the project and maps more than 400 individual tags.
 
 \begin{listing}[H]
 \begin{yamlcode}
@@ -55,37 +56,45 @@ aero_polygon:
 
 \subsection{Zoom Level Views}\label{zoom_level_views}
 
-Since only a subset of the data in the tables is shown on a given zoom level, SQL views for each zoom level were created. The figure \ref{definition_of_zoom_level_view} shows the definition of the SQL view for zoom level 9 of the aeroway layer. The zoom level view merges the data of both tables osm\_aero\_linestring and osm\_aero\_polygon and filters the data to only contain geometries of type runway.
+After the import process all \osm{} data which is required for the vector tiles is stored in the database. Since only a subset of the data in the tables is shown on a given zoom level, SQL views for each zoom level and layer were created. The zoom level views filter the tables to the rows which are shown on a given zoom level.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/buildings_z13_z14}
+  \caption{Difference of zoom level view 13 and 14 in buildings layer}
+  \label{zoom_level_view_building_layer}
+\end{figure}
+
+\autoref{zoom_level_view_building_layer} shows on the left side the building layer on zoom level 13 and on the right side the same layer on zoom level 14. On zoom level 13 only a subset of the data, shown on zoom level 14, is visible. This example exactly shows the use of the zoom level views. 
+\\
+Listing \autoref{definition_of_zoom_level_view} shows the definition of the SQL views on both zoom levels. The \textbf{WHERE} clause in the query of the view \textbf{building\_z13} filters the rows to buildings which have an area greater than 1700. That is the reason why less buildings are shown in right side of \autoref{zoom_level_view_building_layer}.
 
 \begin{listing}[H]
 \begin{sqlcode}
-CREATE OR REPLACE VIEW aeroway_z9 AS
-    SELECT id AS osm_id, type, geometry
-    FROM osm_aero_linestring
-    WHERE type = 'runway'
-    UNION ALL
-    SELECT id AS osm_id, type, geometry
-    FROM osm_aero_polygon
-    WHERE type = 'runway';
+CREATE OR REPLACE VIEW building_z13 AS
+    SELECT id AS osm_id, underground, geometry
+    FROM osm_building_polygon
+    WHERE ST_Area(geometry) > 1700;
+
+CREATE OR REPLACE VIEW building_z14 AS
+    SELECT id AS osm_id, underground, geometry
+    FROM osm_building_polygon;
 \end{sqlcode}
-\caption{Definition of zoom level view}
+\caption{Definition of zoom level views of building layer}
 \label{definition_of_zoom_level_view}
 \end{listing}
 
-The zoom level views help to decouple the database tables which hold the actual data and the definition of the layer. This is very helpful for example if new data is added to a layer, as only the import mapping and the zoom level view needs to be modified.
+Additionally zoom level views help to decouple the database tables which hold the actual data and the definition of the layer. This is very helpful for example if new data is added to a layer, as only the import mapping and the zoom level view needs to be modified.
 
 \subsection{Layer Definition}
 
-The source project contains the definition of the layers inside the vector tiles. The definition contains metadata to access the database and a query which returns the necessary data for this layer. The listing \autoref{definition_of_layer} shows the definition of the layer \textbf{aeroway}. The query does not directly access the database table \textbf{aero\_polygon} instead it queries the zoom level views \textbf{aeroway\_z9} and \textbf{aeroway\_z10to14}.
+The source project contains the definition of the layers inside the vector tiles. The definition contains metadata to access the database and a query which returns the necessary data for this layer. The listing \autoref{definition_of_layer} shows the definition of the layer \textbf{aeroway}. The query does not directly access the database table \textbf{aero\_polygon}. Instead it queries the zoom level views \textbf{aeroway\_z9} and \textbf{aeroway\_z10to14}.
 
 \begin{listing}[H]
 \begin{yamlcode}
 - id: aeroway
     Datasource: 
-      dbname: osm
-      host: db
-      password: osm
-      port: 5432
+      type: postgis
       table: |-
         (
           SELECT osm_ids2mbid(osm_id, is_polygon(geometry)) AS osm_id, geometry, type
@@ -97,25 +106,30 @@ The source project contains the definition of the layers inside the vector tiles
             WHERE z(!scale_denominator!) BETWEEN 10 AND 14
           ) AS aeroway WHERE geometry && !bbox!
         ) AS data
-      type: postgis
-      user: osm
     properties: 
       "buffer-size": 4
 \end{yamlcode}
-\caption{Definition of layer aeroway}
+\caption{Definition of layer aeroway in the vector tile source project}
 \label{definition_of_layer}
 \end{listing}
 
-This layer definition serves as input to the vector tile renderer (Mapnik). The tile renderer will execute every layer query for each tile and replaces expressions like \textbf{!scale\_denominator!} (zoom level) and \textbf{!bbox!} (extent of the tile) with the values of the current tile. If the query above gets executed for a tile on zoom level 8 it won't return any data as the \textbf{WHERE} clause will return in both case false. Whereas if it gets executed on a tile on zoom level 9 all data of the zoom level view aeroway\_z9 will be included in the layer aeroway.
+This layer definition serves as input to the vector tile renderer (Mapnik). The tile renderer will execute every layer query for each tile and replaces expressions like \textbf{!scale\_denominator!} (zoom level) and \textbf{!bbox!} (extent of the tile) with the values of the current tile. If the query in listing \autoref{definition_of_layer} is executed for a tile on zoom level 8 it won't return any data as the \textbf{WHERE} clause will not match in both cases.
+Whereas if it is executed on a tile on zoom level 9 all data of the zoom level view aeroway\_z9 will be included in the layer aeroway.
 
-\subsection{Conclusion}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/road_water_building}
+\caption{Layer road, water, and building features on same map}
+\end{figure}
 
-The \autoref{aero_db_schema} below shows how the database tables, zoom level views and layers are related to each other. This architecture helps to structure the \osm{} data inside the database and opens the possibility to optimize single zoom levels individually.
+\subsection{Relation between Database Tables, Zoom Level Views and Layers}
+
+The \autoref{aero_db_schema} shows how the database tables, zoom level views and layers are related to each other. This architecture helps to structure the \osm{} data inside the database and opens the possibility to optimize single zoom levels individually. The arrow in \autoref{aero_db_schema} describes the data flow.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{images/aero_database_schema}
-\caption{Relations between database tables, zoom level views and layer}
+\caption{Data flow between database tables, zoom level views and layer}
 \label{aero_db_schema}
 \end{figure}
 
@@ -123,22 +137,21 @@ The \autoref{aero_db_schema} below shows how the database tables, zoom level vie
 
 During the development process of the map a number of problems were discovered and optimizations were implemented. This section explains the most interesting problems in detail.
 
-\subsection{Avoid expensive Functions in Zoom Level Views}
+\subsection{Avoid Expensive Transformations in Zoom Level Views}
 
-The purpose of the zoom level views is to filter the data to only contain rows that are shown on a specific zoom level. Expensive calculations or transformations should be avoided in these views.\\
-For example there are multiple label layers which transform a polygon geometry to a point geometry. Doing transformations like these in the zoom level views results in bad rendering performance. 
-The reason for this is that every time the layer query gets executed all rows of the view are transformed and only then most of the rows were discarded because they didn't fit in the bounding box. So first selecting the right row and only executing the transformation on this subset resulted obviously in way better performance.
+The purpose of the zoom level views is to filter the data to only contain rows that are shown on a specific zoom level. Expensive calculations or transformations should be avoided in these views or made in a preprocessing step.\\
+
+For example there are multiple label layers which transform a polygon geometry to a point geometry and since calculating the centroid from a polygon is expensive, transformations like these result in bad rendering performance.\\
+The reason for this is that every time the layer query gets executed, all rows of the view get transformed even though only a subset of the data is needed for the rendered tile. Therefore selecting the right rows and only executing the transformation on this subset results in much better performance.
+
+
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{images/expensive_functions}
-\caption{Example of expensive function which was moved into the layer query}
+\caption{Move expensive function from zoom level view to layer definition}
 \end{figure}
 
-\begin{tcolorbox}[arc=0mm,boxrule=1pt,title=Learning]
-Expensive transformations should either be  made in a preprocessing step or if that's not possible the dataset should be reduced to the smallest size possible.
-\end{tcolorbox}
-\clearpage
 
 \subsection{Helper functions}
 
@@ -164,26 +177,12 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 The listing \autoref{definition_of_classification_helper_function} shows the simplified class function of the layer landuse it takes the type value as input and returns the correct class value. 
 
-\paragraph{Expensive helper functions} In many cases these helper functions are used inside the zoom level views. For example from zoom level 5 to 6 only rows of class wood are shown. It turned out that this function introduced a bottleneck. The function could not be moved to the layer query like the example with the ST\_PointOnSurface transformation above, because it is used to filter the data. So an index on the stored procedure was created which improved the performance.
-
-\begin{listing}[H]
-\begin{sqlcode}
-CREATE OR REPLACE VIEW landuse_z5toz6 AS
-    SELECT id AS osm_id, geometry, type
-    FROM osm_landuse_polygon_gen0
-    WHERE landuse_class(type) = 'wood';
-\end{sqlcode}
-\caption{Definition of landuse zoom level view}
-\label{definition_of_landuse_zoom_level_view}
-\end{listing}
-\clearpage
-
 \subsection{OpenStreetMap ID Transformation}
 
-The data model of \osm{} consists of nodes, ways and relations. Every object gets its own OSM ID assigned. This OSM ID is not unique across object types. Therefore one can find three objects with the same OSM ID but with a different object type.\\
-While this works perfectly fine for \osm{}, this represents a problem because during the import process as the \osm{} objects get transformed to PostGIS geometries. For example an object of type way and relation could get transformed to a linestring geometry.
-
-In order to ensure that the \osm{} ID remains the IDs need to be transformed according to \autoref{osm_id_transformation} into the same ID space Mapbox is using to make OSM IDs unique within vector tiles \cite{103_mapbox.com_2016}.
+The data model of \osm{} consists of nodes, ways and relations. Every object gets its own OSM id assigned. This id is not unique across object types. Therefore one can find three objects with the same id but with a different object type.\\
+While this works perfectly fine for \osm{}, this represents a problem because during the import process these \osm{} objects get transformed to PostGIS geometries. Objects of different types can get transformed to the same PostGIS geometry and therefore their ids would collide.
+\\
+In order to prevent this, the ids need to be transformed according to \autoref{osm_id_transformation} to make OSM ids unique within vector tiles \cite{103_mapbox.com_2016}.
 
 \begin{table}[H]
 \centering
@@ -201,22 +200,6 @@ relation & polygon + polygon label points & (id x 10) + 4    \\
 \label{osm_id_transformation}
 \end{table}
 
-\subsubsection*{Algorithm}
-Input: OpenStreetMap osm\_id\\
-Output: Mapbox osm\_id
-\begin{enumerate}
-    \item If osm\_id is point geometry return osm\_id * 10
-    \item If osm\_id has object type way and was transformed to linestring\\
-    return (osm\_id * 10) + 1
-    \item If osm\_id has object type way and was transformed to polygon\\
-    return (osm\_id * 10) + 2
-    \item If  osm\_id has object type relation and was transformed to linestring\\
-    return (osm\_id * 10) + 3
-    \item If osm\_id has object type relation and was transformed to polygon\\
-    return (osm\_id * 10) + 4
-\end{enumerate}
-
-\clearpage
 \subsection{Place Label Rank Calculation}\label{place_label_rank_calc}
 
 Ranks are important for determining at which zoom level which places should be displayed. The NaturalEarth database contains places with scaleranks assigned by humans and is the most important source for better quality labels (historic places might be much more important despite having a very small population). This dataset is merged with the imported \osm{} data.
@@ -224,22 +207,26 @@ They can also be used to limit density at lower zoom levels to decrease data den
 
 \subsubsection*{Algorithm}
 
-\begin{enumerate}  
-    \item Divide map into grid
-    \item Group labels by tile index
-    \item Sort labels by scalerank, type and population within group
-    \begin{enumerate}
-        \item By scalerank ascending
-        \item By type city, town, village, hamlet, suburb, neighbourhood
-        \item By population descending
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    \begin{enumerate}  
+        \item Divide map into grid
+        \item Group labels by tile index
+        \item Sort labels by scalerank, type and population within group
+        \begin{enumerate}
+            \item By scalerank ascending
+            \item By type city, town, village, hamlet, suburb, neighbourhood
+            \item By population descending
+        \end{enumerate}
+        \item Assign row number as \texttt{localrank}
     \end{enumerate}
-    \item Assign row number as \texttt{localrank}
-\end{enumerate}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.75\textwidth]{images/rank_calculation.png}
-\caption{Local place rank calculation}
-\end{figure}
-
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-10pt}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/rank_calculation.png}
+    \caption{Local place rank calculation}
+    \end{figure}
+\end{minipage}

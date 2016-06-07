@@ -11,7 +11,7 @@ and figuring out which tiles are affected by those changes and schedule them for
   \caption{Simplified diagram of changed tiles detection process}
 \end{figure}
 
-To find out which tiles are affected by updates requires a multi-step process.
+Figuring out which tiles are affected by updates requires a multi-step process.
 
 \begin{enumerate}
     \item Find relevant \osm{} objects affected by the changes
@@ -22,7 +22,9 @@ To find out which tiles are affected by updates requires a multi-step process.
 
 \section{OSM Diff File}
 
-\osm{} provides a single XML file, which contains every mapped object. Since the process of importing is time and resource consuming it is not feasible to redo this process to keep up with all the changes. Therefore OSM additionally provides hourly or daily diff files in the OsmChange format which contains the created, modified and deleted objects over a period of time. Importing only the subsequent diff files after an initial import allows to keep the database in sync with the latest changes.
+\osm{} provides a single XML file, which contains every mapped object. Since the process of importing is time and resource consuming it is not feasible to redo this process to keep up with all the changes. 
+\\
+Therefore OSM additionally provides hourly or daily diff files in the \texttt{OsmChange} format which contains the created, modified and deleted objects over a period of time. Importing only the subsequent diff files after an initial import allows to keep the database in sync with the latest changes.
 
 \subsection*{Example}
 The listing \autoref{create_modify_delete_xml} shows an example diff file which contains a create, modify and delete entry for different objects.
@@ -68,26 +70,30 @@ The listing \autoref{create_modify_delete_xml} shows an example diff file which 
 
 Imposm3 is used for the regular import of the OSM Planet file. Additionally it supports importing OSM Diff files. Imposm3 will read the XML File and calculate with the local cache of previous imports which nodes, ways and relations are affected by the changes.
 
-If the changes would be mapped into the database existing entries in the database will first be removed using a SQL \texttt{DELETE} and then added again using SQL \texttt{INSERT}.\\\\
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    If the changes would be mapped into the database existing entries in the database will first be removed using a SQL \textbf{DELETE} and then added again using SQL \textbf{INSERT}.
+    The diff import functionality of imposm3 is only meant to keep the database in sync with the OSM changes. It is not possible to track which rows in the table have been inserted, updated or deleted. However this information is crucial to detect changed tiles and support all change scenarios from \autoref{osm_change_scenarios}.
+    The only way to keep track of changed features is to either modify Imposm3 or take actions at the database level.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-20pt}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=\textwidth]{images/imposm3_operations_venn_diagram.png}
+      \caption{Imposm3 SQL statements and OSMChange actions}
+    \end{figure}
+\end{minipage}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.35\textwidth]{images/imposm3_operations_venn_diagram.png}
-  \caption{Imposm3 SQL statements and OSMChange actions}
-\end{figure}
-
-The diff import functionality of imposm3 is only meant to keep the database in sync with the OSM changes. It is not possible to track which rows in the table have been inserted, updated or deleted. However this information is crucial to detect changed tiles and support all change scenarios from \autoref{osm_change_scenarios}.
-The only way to keep track of changed features is to either modify Imposm3 or take actions at the database level.
 
 \subsection{Track changes}
 
-To track the entries at the database level the timestamp of the import is added to each object. This makes it possible to query modified and created objects by filtering for the latest import date.
-
-To keep track of entries that are no longer present in the database (like deleted and moved objects) auditing of \texttt{DELETE} actions has been implemented.
+To track the entries at the database level the timestamp of the import is added to each object. This makes it possible to query modified and created objects by filtering for the latest import date. To keep track of entries that are no longer present in the database (like deleted and moved objects) auditing of \textbf{DELETE} actions has been implemented.
 
 \subsubsection{Track inserted rows}
 
-The \texttt{timestamp} column is used to keep a history of inserted features. The \texttt{timestamp} column contains the date of the original PBF or OSC file the feature was defined or changed. This is important for calculating the changed tiles in a timeframe later on in \autoref{calculate-changed-tiles}.
+The \textbf{timestamp} column is used to keep a history of inserted features. The \textbf{timestamp} column contains the date of the original PBF or OSC file the feature was defined or changed. This is important for calculating the changed tiles within a timeframe later on in \autoref{calculate-changed-tiles}.
 
 \begin{enumerate}
    \item The imposm3 diff process inserts new rows for updated and added features
@@ -97,9 +103,9 @@ The \texttt{timestamp} column is used to keep a history of inserted features. Th
 
 \subsubsection{Track deleted rows}
 
-If \osm{} features are changed or removed imposm3 will first delete the row from the table and then insert it again (if it is an update). This is due to performance reasons since a \texttt{DELETE} followed by an \texttt{INSERT} is faster than an \texttt{UPDATE}.
-
-To support the change scenarios of deleting, modifying and moving an object the \texttt{track\_osm\_delete} trigger is enabled for each table to keep track of deleted rows (similar to database auditing).
+If \osm{} features are changed or removed, Imposm3 will first delete the row from the table and then insert it again (if it is an update). This is due to performance reasons since a \textbf{DELETE} followed by an \textbf{INSERT} is faster than an \textbf{UPDATE}.
+ To support the change sce
+ narios of deleting, modifying and moving an object the \textbf{track\_osm\_delete} trigger is enabled for each table to keep track of deleted rows as shown in listing \autoref{enable_delete_trigger}.
 
 \begin{listing}[H]
   \centering
@@ -110,9 +116,10 @@ To support the change scenarios of deleting, modifying and moving an object the 
     FOR EACH ROW EXECUTE PROCEDURE track_osm_building_polygon_delete()
   \end{sqlcode}
   \caption{Delete trigger on a table}
+  \label{enable_delete_trigger}
 \end{listing}
 
-The trigger will track the deleted row in a separate audit table before discarding it.
+The trigger in listing \autoref{delete_trigger} will track the deleted row in a separate audit table before discarding it.
 
 \begin{listing}[H]
   \centering
@@ -130,12 +137,12 @@ $$ language plpgsql;
 
   \end{sqlcode}
   \caption{Logic of delete trigger}
+  \label{delete_trigger}
 \end{listing}
 
 As a result each table has an additional delete tables which contains all deleted and modified rows. This allows in a second step to calculate the affected tiles and rerender them.
 
 %----------------------------
-\newpage{}
 \section{Calculate changed tiles}\label{calculate-changed-tiles}
 
 One way to determine which tiles are affected by changes in the database is to calculate the covered tiles from changed geometries by recursively descending the XYZ Quadtree and checking for intersections of the tiles and geometries.
@@ -177,7 +184,7 @@ is extended by a custom buffer $b$. The tile usually has a resolution of $256$px
 
 \subsubsection*{PostgreSQL Implementation}
 
-The PostGIS implementation makes heavy use of the \texttt{\&\&} operator and GiST indizes on the geometry columns to check whether the tile extent and geometry intersect with each other. Although using the bounding box of the geometry is not accurate and can yield false positive changed tiles it is much faster than using the correct \texttt{ST\_Intersects}.
+The PostGIS implementation makes heavy use of the \texttt{\&\&} operator and GiST indizes on the geometry columns to check whether the tile extent and geometry intersect with each other. Although using the bounding box of the geometry is not accurate and can yield false positive changed tiles it is faster than using the correct \texttt{ST\_Intersects}.
 
 \begin{listing}[H]
   \centering
@@ -199,41 +206,6 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
   \end{sqlcode}
   \caption{Recursive tile matching of geometry}
-\end{listing}
-
-
-\subsection{Point Optimization}
-
-Points always fit into a single tile at each zoom level.
-Therefore given a point the covered tile can immediately be calculated. The recursive descend algorithm is not needed for this.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.9\textwidth]{images/point_xyz_matching.png}
-  \caption{Tiles covering a point geometry}
-\end{figure}
-
-
-\begin{listing}[H]
-  \centering
-  \begin{ccode}
-#include "math.h"
-float8 D2R = M_PI / 180.0;
-
-// Latitude and longitude of Zurich
-int32 zoom_level = 14;
-float8 lat = 47.376887;
-float8 lon = 8.541694;
-
-float8 _sin = sin(lat * D2R);
-float8 z2 = pow(2, zoom_level);
-
-// XYZ Tile index calculated from latitude and longitude
-int32 x = floor(z2 * (lon / 360 + 0.5));
-int32 y = floor(z2 * (0.5 - 0.25 * log((1 + _sin) / (1 - _sin)) / M_PI));
-
-  \end{ccode}
-  \caption{Calculate tile at given zoom level for a point}
 \end{listing}
 
 \subsection{Export changed tiles}

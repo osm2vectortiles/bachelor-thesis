@@ -3,14 +3,14 @@
 
 
 Rendering the planet file from zoom level 0 to zoom level 14 requires $\sum_{i=1}^{14} 4^i = 357\,913\,941$ tiles to be rendered. 
-Rendering this amount of tiles serially is no longer possible due to two problems.
+Rendering this amount of tiles serially is no longer possible due to two reasons.
 
 \begin{itemize}
     \item The rendering process might fail and progress is lost
     \item A single worker process takes approximately 276 days to render the planet with a throughput of $54\,000$ tiles per hour
 \end{itemize}
 
-To solve these problems two measurements described in \autoref{split-rendering-process-task} and \autoref{list-job} have been taken.
+To solve these problems two measurements described in \autoref{split-rendering-process-task} and \autoref{distributed_architecture} have been taken.
 
 %-----------------------------------------
 \section{Split Rendering Process into Jobs}\label{split-rendering-process-task}
@@ -27,7 +27,7 @@ The unit of a job therefore is a bounding box derived from a XYZ tile index (pyr
 
 \subsection{Pyramid Job}\label{pyramid-job}
 
-To divide the work for rendering the planet into equal parts across the world the XYZ coordinate schema described in \autoref{part1_xyz_coordinates} is used to divide the planet into several subpyramids.
+To divide the work of rendering the planet into equal parts across the world the XYZ coordinate schema described in \autoref{part1_xyz_coordinates} is used to divide the planet into several subpyramids.
 
 \subsubsection*{Algorithm}
 
@@ -46,15 +46,21 @@ To divide the work for rendering the planet into equal parts across the world th
 
 \subsubsection*{Example}
 
-Given the job zoom level $z=8$ and the max zoom level $Z=14$ the planet is divided into $4^{8}$ jobs.
-This means each subpyramid task consists of rendering all descendant tiles from a tile at zoom level 8.
-Each job therefore consists of $\sum_{i=0}^{6} 4^i = 5\,461$ tiles that need to be rendered.  \\
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.4\textwidth]{images/switzerland_tiled_z8_small.png}
-  \caption{Map divided into tasks at job zoom level 8}
-\end{figure}
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    Given the job zoom level $z=8$ and the max zoom level $Z=14$ the planet is divided into $4^{8}$ jobs.
+    This means each subpyramid task consists of rendering all descendant tiles from a tile at zoom level 8.
+    Each job therefore consists of $\sum_{i=0}^{6} 4^i = 5\,461$ tiles that need to be rendered.  \\
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-10pt}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=\textwidth]{images/switzerland_tiled_z8_small.png}
+      \caption{Map divided into tasks at job zoom level 8}
+    \end{figure}
+\end{minipage}
 
 %-----------------------------------------
 \subsection{List Job}\label{list-job}
@@ -74,59 +80,31 @@ To group tiles that are in close proximity in one batch job the tiles are sorted
 
 \subsubsection*{Quadkey}
 
-The Quadkey has several unique properties which makes it ideal for grouping
-tiles together.
-
-\begin{enumerate}  
-    \item Length indicates level of detail
-    \item Quadkey starts with Quadkey of parent tile
-\end{enumerate}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.65\textwidth]{images/quadkey.png}
-  \caption{Quadkey indexing}
-\end{figure}
-
-\subsubsection*{Implementation}
-
-The Python implementation of the algorithm is straightforward and consists of
-calculating the Quadkey from a XYZ, sorting by it and splitting it into
-sublists of the desired batch size.
-
-\begin{pythoncode}
-tiles = [Tile(0, 0, 0), Tile(0, 1, 0), ..]
-tiles.sort(key=lambda t: quad_tree(t.x, t.y, t.z))
-batch_jobs = split_tiles_into_batch_jobs(tiles, batch_size=1000)
-
-def quad_tree(tx, ty, tz):
-    quad_key = ''
-    for i in range(tz, 0, -1):
-        digit = 0
-        mask = 1 << (i-1)
-        if (tx & mask) != 0:
-            digit += 1
-        if (ty & mask) != 0:
-            digit += 2
-        quad_key  += str(digit)
-
-    return quad_key
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    The Quadkey has several unique properties which makes it ideal for grouping tiles together.
+    \begin{enumerate}  
+        \item Length indicates level of detail
+        \item Quadkey starts with Quadkey of parent tile
+    \end{enumerate}
     
-def split_tiles_into_batch_jobs(tiles, batch_size):
-    tiles_batch = []
+    These properties make it possible to simply sort lexically by the Quadkey of a tile to group tiles together in batches.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-20pt}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=\textwidth]{images/quadkey.png}
+      \caption{Quadkey indexing}
+    \end{figure}
     
-    for tile in tiles:
-        tiles_batch.append(tile)
-        if len(tiles_batch) > batch_size:
-            yield tiles_batch
-            tiles_batch = []
+    
+\end{minipage}
 
-    yield tiles_batch
-\end{pythoncode}
 
 %--------------------------------------
-\newpage
-\section{Distributed Architecture}
+\section{Distributed Architecture}\label{distributed_architecture}
 
 To distribute across several hosts a distributed architecture (\autoref{distributed_rendering_architecture}) using job queues has been implemented.
 
@@ -152,19 +130,18 @@ This means if any process fails at any stage in the workflow (\textbf{render} or
 Since there are always some jobs that never complete or have very distinct problems the timeout prevents the workers from being jammed by the same failing jobs over and over again.
 Failed jobs can be inspected and rescheduled at a later point in time.
 
-\newpage{}
 %----------------------------
 \section{Merging Results}
 
 A very important part of the workflow is merging all of the $65\,536$ SQLite databases.
-The \texttt{merge-jobs} process downloads the linked SQLite database in the result message
+The \textbf{merge-jobs} process downloads the linked SQLite database in the result message
 and then merges it into the specified merge target (e.g. the Planet MBTiles file).
 
 \begin{enumerate}  
-    \item Message is consumed from the \texttt{results} queue.
+    \item Message is consumed from the \textbf{results} queue.
     \item The linked SQLite database is downloaded from S3.
     \item The downloaded SQLite database is attached to the merge target.
-    \item  The data tables \texttt{map} containing the tile indizes and \texttt{images} containing the actual PBF data are copied over replacing the already existing entries in the database.
+    \item  The data tables \textbf{map} containing the tile indizes and \textbf{images} containing the actual PBF data are copied over replacing the already existing entries in the database.
     
 \begin{sqlcode}
 ATTACH DATABASE 'source.mbtiles' AS source;
@@ -176,17 +153,16 @@ REPLACE INTO images SELECT * FROM source.images;
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.88\textwidth]{images/merge-jobs.png}
+  \includegraphics[width=0.88\textwidth]{images/merge-jobs}
   \caption{Merge completed MBTiles files together}
 \end{figure}
 
 This is a very fast way of distributing updates to an MBTiles file which can be applied with any SQLite client and performs for many small databases merged into one large merge target.
 
-\newpage{}
 %----------------------------
 \section{Save Space by removing identical subpyramids}
 
-Water tiles is a large part of the resulting planet file since most of the earth is covered in water.
+Water tiles are a large part of the resulting planet file since most of the earth is covered in water.
 If a tile only contains water it is not desirable to store the same water geometry on all zoom levels
 from z8 down to z14 (resulting in $\sum_{i=0}^{6} 4^i = 5\,461$ tiles all containing the same geometry).
 To prevent this issue all z8 subpyramids containg the same data on all descendant tiles are removed.
@@ -194,7 +170,7 @@ To prevent this issue all z8 subpyramids containg the same data on all descendan
 \subsubsection*{Algorithm}
 
 \begin{enumerate}  
-    \item Calculate all descendant tiles of a given parent tile
+    \item Calculate all descendant tiles of a given parent tile at the zoom level \textbf{maskLevel}
     \item Calculate SHA1 checksum for each tile
     \item Count occurences of each unique checksum
     \item Ensure there is only one checksum used in all descendants
@@ -207,3 +183,13 @@ To prevent this issue all z8 subpyramids containg the same data on all descendan
   \includegraphics[width=0.6\textwidth]{images/remove_identical_subtiles.png}
   \caption{A z8 subpyramid with the same data hash in all descendant tiles}
 \end{figure}
+
+\subsubsection*{Tile Server Implementation}
+
+To support removed subpyramids in tile server (or even client side rendering) implementations need to be able to backfill missing data in higher zoom levels with data from lower zoom levels.
+
+\begin{enumerate}  
+    \item Serve vector data of requested tile if exists
+    \item If tile not exists calculate parent tile at zoom level \textbf{maskLevel}
+    \item Serve vector data from parent tile
+\end{enumerate}
