@@ -66,14 +66,16 @@ The listing \autoref{create_modify_delete_xml} shows an example diff file which 
 
 \paragraph{Move object} An object is moved (e.g. an incorrectly mapped bus stop had to be repaired or has been moved in the real world). All tiles covered by the original object and all tiles covered by the moved object must be rerendered.
 
-\section{Diff Import}
+\section{Diff Import}\label{diff_import}
 
-Imposm3 is used for the regular import of the OSM Planet file. Additionally it supports importing OSM Diff files. Imposm3 will read the XML File and calculate with the local cache of previous imports which nodes, ways and relations are affected by the changes.
+Additionally to importing the regular OSM Planet file, imposm3 supports importing OSM Diff files. Imposm3 will read the Diff file and calculate with the local cache of previous imports which nodes, ways and relations are affected by the changes.\\
+The \texttt{create} entry from listing \autoref{create_modify_delete_xml} results in a
+SQL \textbf{INSERT}, \texttt{delete} in a SQL \textbf{DELETE} and \texttt{modify} in a SQL \textbf{DELETE} followed by a SQL \textbf{INSERT} statement. This is very unfortunate, one would think that a \texttt{modify} results in a SQL \textbf{UPDATE} statement. 
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    If the changes would be mapped into the database existing entries in the database will first be removed using a SQL \textbf{DELETE} and then added again using SQL \textbf{INSERT}.
-    The diff import functionality of imposm3 is only meant to keep the database in sync with the OSM changes. It is not possible to track which rows in the table have been inserted, updated or deleted. However this information is crucial to detect changed tiles and support all change scenarios from \autoref{osm_change_scenarios}.
+    The diff import functionality of imposm3 is only meant to keep the database in sync with the OSM changes. It is not possible to track which rows in the table have been inserted, updated or deleted.\\
+    However this information is crucial to detect changed tiles and support all change scenarios described in section \autoref{osm_change_scenarios}.
     The only way to keep track of changed features is to either modify Imposm3 or take actions at the database level.
 \end{minipage}
 \hfill
@@ -87,11 +89,11 @@ Imposm3 is used for the regular import of the OSM Planet file. Additionally it s
 \end{minipage}
 
 
-\subsection{Track changes}
+\section{Track changes}
 
 To track the entries at the database level the timestamp of the import is added to each object. This makes it possible to query modified and created objects by filtering for the latest import date. To keep track of entries that are no longer present in the database (like deleted and moved objects) auditing of \textbf{DELETE} actions has been implemented.
 
-\subsubsection{Track inserted rows}
+\subsection{Track inserted rows}
 
 The \textbf{timestamp} column is used to keep a history of inserted features. The \textbf{timestamp} column contains the date of the original PBF or OSC file the feature was defined or changed. This is important for calculating the changed tiles within a timeframe later on in \autoref{calculate-changed-tiles}.
 
@@ -101,11 +103,10 @@ The \textbf{timestamp} column is used to keep a history of inserted features. Th
    \item Update the table and set the rows \texttt{timestamp} column to the timestamp of the import
 \end{enumerate}
 
-\subsubsection{Track deleted rows}
+\subsection{Track deleted rows}
 
 If \osm{} features are changed or removed, Imposm3 will first delete the row from the table and then insert it again (if it is an update). This is due to performance reasons since a \textbf{DELETE} followed by an \textbf{INSERT} is faster than an \textbf{UPDATE}.
- To support the change sce
- narios of deleting, modifying and moving an object the \textbf{track\_osm\_delete} trigger is enabled for each table to keep track of deleted rows as shown in listing \autoref{enable_delete_trigger}.
+ To support the change scenarios of deleting, modifying and moving an object, the \textbf{track\_osm\_delete} trigger is enabled for each table to keep track of deleted rows as shown in listing \autoref{enable_delete_trigger}.
 
 \begin{listing}[H]
   \centering
@@ -123,7 +124,7 @@ The trigger in listing \autoref{delete_trigger} will track the deleted row in a 
 
 \begin{listing}[H]
   \centering
-  \begin{sqlcode}
+  \begin{plpgsqlcode}
 CREATE OR REPLACE FUNCTION track_osm_building_polygon_delete() RETURNS TRIGGER AS $$
 BEGIN
      IF (TG_OP = 'DELETE') THEN
@@ -135,7 +136,7 @@ BEGIN
 END;
 $$ language plpgsql;
 
-  \end{sqlcode}
+  \end{plpgsqlcode}
   \caption{Logic of delete trigger}
   \label{delete_trigger}
 \end{listing}
@@ -154,13 +155,13 @@ One way to determine which tiles are affected by changes in the database is to c
     \item \label{itm:bbox} Check if geometry $g$ intersects with the tile extent $e$ 
     \item Stop if there is no intersection in \ref{itm:bbox}
     \item Select tile index $(x,y,z)$
-    \item Calculate the four child XYZ indizes \\
+    \item Calculate the four child $(x,y,z)$ indizes \\
        \begin{pmatrix}
             x*2 & y*2 & z+1\\
             x*2+1 & y*2 & z+1\\
             x*2 & y*2+1 & z+1 \\ x*2+1 & y*2+1 & z+1
         \end{pmatrix}
-    \item Call \ref{itm:calc-extent} for children if zoom level $z$ has not reached max zoom level $Z$
+    \item Call \ref{itm:calc-extent} for each child row if zoom level $z$ has not reached max zoom level $Z$
 \end{enumerate}
 
 \begin{figure}[H]
@@ -188,7 +189,7 @@ The PostGIS implementation makes heavy use of the \texttt{\&\&} operator and GiS
 
 \begin{listing}[H]
   \centering
-  \begin{sqlcode}
+  \begin{plpgsqlcode}
 CREATE OR REPLACE FUNCTION overlapping_tiles(geom geometry, max_zoom_level INT, buffer_size INT)
 RETURNS TABLE (tile_z INT, tile_x INT, tile_y INT) AS $$
 BEGIN
@@ -204,11 +205,11 @@ BEGIN
         SELECT z, x, y FROM tiles WHERE e;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
-  \end{sqlcode}
+  \end{plpgsqlcode}
   \caption{Recursive tile matching of geometry}
 \end{listing}
 
-\subsection{Export changed tiles}
+\subsection*{Export changed tiles}
 
 The algorithm defined in \autoref{calculate-changed-tiles} is applied over all geometries that have changed since a given timestamp to find out all unique tiles that are affected by the changes and need to be rendered again.
 
@@ -223,8 +224,32 @@ The algorithm defined in \autoref{calculate-changed-tiles} is applied over all g
   \caption{Calculate all tiles containing building polygons that changed in the last 7 days}
 \end{listing}
 
+\autoref{changed_tiles_on_z10} shows the changed tiles on zoom level 10 over the course of 10 days. A number of interesting descoverys were made:
+
 \begin{figure}[H]
   \centering
-  \includegraphics[width=1\textwidth]{images/changed_tiles_z10.png}
+  \includegraphics[width=1\textwidth]{images/changed_tiles_z10}
   \caption{Changed tiles on z10 over course of 10 days}
+  \label{changed_tiles_on_z10}
 \end{figure}
+
+\paragraph{Boundaries}
+It is striking that along the administrative boundaries many tiles have changed. This leads back to the fact that in \osm{} a single boundary is represented as multiple nodes which are part of a single relation. However in the database a boundary is represented as a single geometry of type linestring.\\
+If somebody changes a single node on the administrative boundary, the Diff import process deletes this geometry and inserts it again like described in \autoref{diff_import}. In a second step the changed tiles process detects that this row has changed and calculates all affected tiles. This is the reason why all tiles along the boundaries are detected as changed even though only a small part of the boundary was actually changed.\\
+A possible solution for this problem could be to exclude administrative boundaries of the changed tile process and only update them irregularly.
+
+\paragraph{Changes in Africa}
+
+It is encouraging to see that there is a lot of mapping activity in Africa. This part of the world is probably the least mapped part in \osm{}.
+
+\paragraph{Big generic blocks}
+
+There are a couple of big generic blocks visible. No explanation could be found for this symptom yet.
+
+\paragraph{Big rural areas were nothing changes}
+
+There are a lot of areas like Canada, Alaska, Russia, South America and Australia were almost nothing changes.
+
+\paragraph{Hypothesis}
+
+It turns out that the unique changed tiles of 20 days is ~ 20 million tiles while unique changed tiles of 10 days has ~18 million tiles. This leads to the hypothesis that less tiles change often.

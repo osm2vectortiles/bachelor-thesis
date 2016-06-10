@@ -64,7 +64,7 @@
 
 \pagestyle{scrheadings} % Show chapter titles as headings
 
-\include{front_back_matter/contents} % Contents, list of figures/tables/listings and acronyms
+\include{front_back_matter/contents} % Contents
 
 \pagenumbering{arabic} % Arabic page numbering for thesis content (1, 2, 3, etc)
 
@@ -73,15 +73,13 @@
 %------------------------------------------------
 \newpage
 \part{Technical Report}\label{technical_report}
-\include{chapters/technical_report/introduction}
-\include{chapters/technical_report/theorie}
-\include{chapters/technical_report/defining_mapbox_vector_tiles}
-\include{chapters/technical_report/scalable_rendering_process}
-\include{chapters/technical_report/updatable_vector_tiles}
-\include{chapters/technical_report/results_and_future}
-
+\include{chapters/technical_report/introduction}\newpage
+\include{chapters/technical_report/theorie}\newpage
+\include{chapters/technical_report/defining_mapbox_vector_tiles}\newpage
+\include{chapters/technical_report/scalable_rendering_process}\newpage
+\include{chapters/technical_report/updatable_vector_tiles}\newpage
+\include{chapters/technical_report/results_and_future}\newpage
 %------------------------------------------------
-\newpage
 \part{Project Documentation}
 \include{chapters/project_documentation/requirements_specification}\newpage
 \include{chapters/project_documentation/analysis_and_design}\newpage
@@ -103,6 +101,7 @@
 %---------------------------------------
 %	POST-CONTENT THESIS PAGES
 %---------------------------------------
+\include{front_back_matter/contents_after}
 \include{front_back_matter/bibliography}
 \newpage
 \include{front_back_matter/declaration}

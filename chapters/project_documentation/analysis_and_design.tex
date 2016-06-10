@@ -10,14 +10,15 @@ The architecture of the project is structured into the import phase (ETL process
   \caption{Workflow structured into components}
 \end{figure}
 
+Each component is a Docker image\cite{docker} with a single purpose. The Docker containers (components) are then linked against the database container and provided with additional input data to perform their functions. Isolating the components into Docker images makes it possible to ensure that the complicated installations and dependencies of some components never cause an issue. By additionally using Docker Compose it is possible to define the entire ETL process with different containers and make deployment and scaling containers easy.
+
 \subsection{Import Components}
 
-The import components take care of importing \osm{} and other external data sources such as SQL views, triggers, indices and functions to help with the rendering and changed tiles detection process.
+The import components take care of importing \osm{} data, external data sources and SQL utilities such as views, triggers, indices and functions to help with the rendering and changed tiles detection process.
 
 \subsubsection{Import External}
 
-The \textbf{import-external} component is responsible for importing all data that is not mapped directly from \osm{} into the PostGIS database.
-The \autoref{import_external_diagram} shows the external data sources and programs used to import the data into the PostGIS database.
+The \textbf{import-external} component is responsible for importing all data that is not mapped directly from \osm{} into the PostGIS database. \autoref{import_external_diagram} shows the external data sources and programs used to import the data into the PostGIS database. The GDAL tool ogr2ogr is used to import the various data sources into the PostGIS database.
 
 \begin{figure}[H]
   \centering
@@ -28,7 +29,7 @@ The \autoref{import_external_diagram} shows the external data sources and progra
 
 \subsubsection{Import OSM}
 
-The \texttt{import-osm} component takes the first PBF file in the import folder and imports it into PostGIS. After that it updates the scaleranks using Natural Earth data from \texttt{import-external} to update the scaleranks and create generalized tables based off the imported data. The data is imported using imposm3 diff mode and can take up to 14 hours for the entire planet file.
+The \textbf{import-osm} component takes the first PBF file in the import folder and imports it into PostGIS. After that it updates the scaleranks using Natural Earth data from \texttt{import-external} to update the scaleranks and create generalized tables based off the imported data. The data is imported using imposm3 diff mode and can take up to 14 hours for the entire planet file.
 
 \begin{figure}[H]
   \centering
@@ -52,32 +53,32 @@ The changed tile detection components handle creating an \osm{} Diff file based 
 
 \subsubsection{Update OSM Diff}
 
-The \textbf{update-osm-diff} component takes the planet file as input and creates an \osm{} Diff file containing all the changes happened since the planet file was downloaded.
+The \textbf{update-osm-diff} component takes the planet file as input and creates an \osm{} Diff file containing all the changes happened since the planet file was downloaded. The \texttt{osmupdate} tool is used to execute this task.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=1.0\textwidth]{images/architecture/update_osm_diff_diagram}
-  \caption{Import OSM diagram}
+  \caption{Update OSM Diff diagram}
 \end{figure}
 
 \subsubsection{Import OSM Diff}
 
-The \texttt{import-osm-diff} component takes the \osm{} diff file created with the \texttt{update-osm-diff} component as input and imports all changes into the database.
+The \textbf{import-osm-diff} component takes the \osm{} diff file created with the \textbf{update-osm-diff} component as input and imports all changes into the database.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=1.0\textwidth]{images/architecture/import_osm_diff_diagram}
-  \caption{Import OSM diagram}
+  \caption{Import OSM Diff diagram}
 \end{figure}
 
 \subsubsection{Merge OSM Diff}
 
-The \textbf{merge-osm-diff} component takes the old planet file and the latest diff file as input and merges all changes into the old planet file. Additionally the timestamp of the planet file is updated in order to have a correct diff file when the \textbf{update-osm-diff} process runs the next time.
+The \textbf{merge-osm-diff} component takes the old planet file and the latest diff file as input and merges all changes into the old planet file. Additionally the timestamp of the planet file is updated in order to have a correct diff file when the \textbf{update-osm-diff} process runs the next time. The \texttt{osmconvert} tool is used to merge the latest diff file into the old planet file.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=1.0\textwidth]{images/architecture/merge_osm_diff_diagram}
-  \caption{Import OSM diagram}
+  \caption{Merge OSM Diff diagram}
 \end{figure}
 
 \subsubsection{Changed Tiles}
@@ -134,13 +135,41 @@ The \textbf{merge-jobs} component is responsible for taking result messages from
 \end{figure}
 
 %------------------------------------------------------
-\newpage
 \section{Database and Layer Schema}\label{database-schema}
 
-In this section the different layers and the database schema related to it are explained and justified. The database schema is denormalized and has no relations to fulfill the performance constraints of rendering.
+In this section the different layers and the database schema related to it are explained and justified. Each layer contains a diagram showing the relations and model between tables, zoom level views (\autoref{zoom_level_views}) and the vector tile layers (\autoref{layer_diagram_notation}).
+The database schema is denormalized and has no relations to fulfill the performance constraints of rendering.
 It is heavily optimized for fast reads since the only use case of the database schema is generating vector tiles from the PostGIS database.
 
-Each vector tile layer consists of several zoom level views using different data sources as explained in \autoref{zoom_level_views}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/diagram_notation}
+  \caption{Database and layer schema diagram notation}
+  \label{layer_diagram_notation}
+\end{figure}
+
+%------------------------------------------------------
+\subsection{Barriers}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    The layer \textbf{barrier\_line} contains barriers that block a way or path. Common features are structural walls, fences or access controls like bicycle barriers and gates. Man made objects like piers or natural barriers like a cliff are contained as well in the \textbf{barrier\_line} layer. Barriers are quite a detailed information and are therefore only relevant at the highest zoom level 14.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \begin{figure}[H]
+      \includegraphics[width=1\textwidth]{images/schema/piers_example}
+      \caption{Barrier line layer with piers}
+    \end{figure}
+\end{minipage}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/schema/barrier_line}
+  \caption{Barrier layer}
+\end{figure}
+
 
 %------------------------------------------------------
 \subsection{Water}
@@ -405,27 +434,6 @@ Each vector tile layer consists of several zoom level views using different data
   \centering
   \includegraphics[width=0.8\textwidth]{images/schema/airport}
   \caption{Airport label layer}
-\end{figure}
-
-%------------------------------------------------------
-\subsection{Barriers}
-
-\noindent\begin{minipage}[t]{0.48\linewidth}
-    \vspace{0pt}
-    The layer \textbf{barrier\_line} contains barriers that block a way or path. Common features are structural walls, fences or access controls like bicycle barriers and gates. Man made objects like piers or natural barriers like a cliff are contained as well in the \textbf{barrier\_line} layer. Barriers are quite a detailed information and are therefore only relevant at the highest zoom level 14.
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.48\linewidth}
-    \begin{figure}[H]
-      \includegraphics[width=1\textwidth]{images/schema/piers_example}
-      \caption{Barrier line layer with piers}
-    \end{figure}
-\end{minipage}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{images/schema/barrier_line}
-  \caption{Barrier layer}
 \end{figure}
 
 %------------------------------------------------------

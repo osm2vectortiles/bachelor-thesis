@@ -27,7 +27,7 @@ The unit of a job therefore is a bounding box derived from a XYZ tile index (pyr
 
 \subsection{Pyramid Job}\label{pyramid-job}
 
-To divide the work of rendering the planet into equal parts across the world the XYZ coordinate schema described in \autoref{part1_xyz_coordinates} is used to divide the planet into several subpyramids.
+To divide the work of rendering the planet into equal parts across the world, the XYZ coordinate schema described in \autoref{part1_xyz_coordinates} is used to divide the planet into several subpyramids. A pyramid job means that the worker needs to not only render the given tile index but also all descendant tiles down to the maximum zoom level (the entire tile subpyramid).
 
 \subsubsection*{Algorithm}
 
@@ -65,18 +65,68 @@ To divide the work of rendering the planet into equal parts across the world the
 %-----------------------------------------
 \subsection{List Job}\label{list-job}
 
-It is important to be able to update distinct tiles to fix bugs later on or rerender all changed geometries. A list job is a batch job of tiles grouped together by their proximity and is created from a large list of tiles. The primary use case is to process the large list of changed tiles that need to be rerendered each week ($20\,000\,000$ to $30\,000\,000$ tiles).
+\noindent\begin{minipage}[t]{0.68\linewidth}
+    It is important to be able to update distinct tiles to fix bugs later on or rerender all changed geometries. A list job is a batch job of tiles grouped together by their proximity and is created from a large list of tiles.\\
+    
+    Each week a list of changed tile indizes is produced by the changed tiles detection ($20\,000\,000$ to $30\,000\,000$ tiles). This list must be split into batch jobs where each job contains several thousand tiles that need to be rendered. Since PostgreSQL has been configured to cluster rows together by the tile index of the geometry column it is possible to gain additional performance by grouping the tiles that are close to each other into a batch job.
 
-\subsubsection*{Algorithm}
-
-To group tiles that are in close proximity in one batch job the tiles are sorted lexically by their Quadkey.
-
-\begin{enumerate}  
-    \item Given a large list of tiles
-    \item Calculate Quadkey of XYZ tile index
-    \item Sort lexically by Quadkey
-    \item Split list into sublists of batch size
-\end{enumerate}
+    \subsubsection*{Algorithm}
+    
+    To group tiles that are in close proximity in one batch job the tiles are sorted lexically by their Quadkey\cite{bing_quad_key}. Due to the properties of the Quadkey numbering scheme this results in the tiles being sorted by their parents indizes.
+    
+    \begin{enumerate}  
+        \item Given a large list of tiles
+        \item Calculate Quadkey of XYZ tile index
+        \item Sort lexically by Quadkey
+        \item Split list into sublists of batch size
+    \end{enumerate}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.28\linewidth}
+    \begin{table}[H]
+        \scalebox{0.9}{
+            \begin{tabular}{lll}
+            \hline
+            XYZ Index & Quad Key \\
+            \hline
+            8/175/48 & 10321111 \\
+            8/48/103 & 02310222 \\
+            8/76/60 & 01223300 \\
+            8/154/130 & 30011030 \\
+            8/205/31 & 11023323 \\
+            8/128/93 & 12022202 \\
+            8/63/33 & 00311113 \\
+            8/86/117 & 03230312 \\
+            8/160/119 & 12320222 \\
+            8/246/84 & 13130310 \\ 
+            \end{tabular}
+        }
+        \caption{List of changed tiles indizes}
+        \label{tiles_sorted_quad_key}
+    \end{table}
+    \begin{table}[H]
+        \scalebox{0.9}{
+            \begin{tabular}{lll}
+            \hline
+            XYZ Index & Quad Key          \\
+            \hline
+           8/63/33 & 00311113 \\
+            8/76/60 & 01223300 \\
+            8/48/103 & 02310222 \\
+            \hline
+            8/86/117 & 03230312 \\
+            8/175/48 & 10321111 \\
+            8/205/31 & 11023323 \\
+            \hline
+            8/128/93 & 12022202 \\
+            8/160/119 & 12320222 \\
+            8/246/84 & 13130310 \\
+            \end{tabular}
+        }
+        \caption{List of tile indizes split into batches}
+        \label{tiles_sorted_quad_key}
+    \end{table}
+\end{minipage}
 
 \subsubsection*{Quadkey}
 
@@ -186,7 +236,7 @@ To prevent this issue all z8 subpyramids containg the same data on all descendan
 
 \subsubsection*{Tile Server Implementation}
 
-To support removed subpyramids in tile server (or even client side rendering) implementations need to be able to backfill missing data in higher zoom levels with data from lower zoom levels.
+To support removed subpyramids in tile server implementations need to be able to backfill missing data in higher zoom levels with data from lower zoom levels.
 
 \begin{enumerate}  
     \item Serve vector data of requested tile if exists

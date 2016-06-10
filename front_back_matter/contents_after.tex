@@ -1,0 +1,78 @@
+%----------------------------------------------------------------------------------------
+%	List of Figures
+%----------------------------------------------------------------------------------------
+
+\refstepcounter{dummy}
+
+%\pdfbookmark[1]{\listfigurename}{lof} % Bookmark name visible in a PDF viewer
+
+\listoffigures
+
+\vspace*{8ex}
+\newpage
+
+%----------------------------------------------------------------------------------------
+%	List of Tables
+%----------------------------------------------------------------------------------------
+
+\refstepcounter{dummy}
+\listoftables
+
+\vspace*{8ex}
+\newpage
+    
+%-------------------------------------
+%	List of Listings
+%-------------------------------------
+
+
+%\refstepcounter{dummy}
+%\renewcommand\listoflistingscaption{List of source codes}
+%\listoflistings
+%\vspace*{8ex}
+%\newpage
+
+%\addcontentsline{toc}{chapter}{\lstlistlistingname} % Uncomment if you would like the list of listings to appear in the table of contents
+
+%\pdfbookmark[1]{\lstlistlistingname}{lol} % Bookmark name visible in a PDF viewer
+%
+%\lstlistoflistings 
+%
+%\vspace*{8ex}
+%\newpage
+       
+%----------------------------------------------------------------------------------------
+%	Acronyms
+%----------------------------------------------------------------------------------------
+\refstepcounter{dummy}
+\markboth{\spacedlowsmallcaps{Acronyms}}{\spacedlowsmallcaps{Acronyms}}
+\chapter*{Acronyms}
+
+\begin{acronym}[Acronyms]
+\acro{OSM}{OpenStreetMap, free map}
+\acro{GIS}{Geographic Information System}
+\acro{FOSS}{Free Open Source Software}
+\end{acronym}  
+
+%----------------------------------------------------------------------------------------
+%	Glossary
+%----------------------------------------------------------------------------------------
+\refstepcounter{dummy}
+\markboth{\spacedlowsmallcaps{Glossary}}{\spacedlowsmallcaps{Glossary}}
+\chapter*{Glossary}
+
+\begin{acronym}[Glossary]
+\acro{Vector Tiles}{Packets of geographic data, packaged into predefined roughly-square shaped "tiles" for transfer over the web}
+\acro{Mapbox Streets}{Name of Mapbox's vector tile set}
+\acro{Mapbox GL}{Clientside rendering engine}
+\acro{Mapbox Studio}{Mapbox's map style editor}
+\acro{Imposm3}{Tool which allows to import the OSM Planet file into a database}
+\acro{Mapnik}{Tool to generate vector tiles}
+\acro{MBTiles}{Container format for storing map tiles in a single file}
+\acro{GeoJSON}{File format for encoding a variety of geographic data structures}
+\acro{Web GL}{Javascript API for the graphics library in browsers}
+\acro{Natural Earth}{Public map dataset}
+\acro{OSM Planet file}{ XML file containing all OpenStreetMap data}
+\end{acronym}  
+
+\endgroup

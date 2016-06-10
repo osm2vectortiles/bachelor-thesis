@@ -35,10 +35,15 @@ However rerendering the entire planet using the scalable rendering process is no
 
 The \osmvt{} project originated from the preceding study thesis in the fall semester of 2015 with the same vision as the bachelor thesis to allow anyone to create custom \osm{} maps without managing complex infrastructure. 
 
-\subsection*{Scope}\label{part1_scope}
+\paragraph{Results of study thesis}
+\begin{itemize}
+    \item Workflow for generating vector tiles (not meant to scale for rendering entire planet)
+    \item Mapbox Streets v5 compatible vector tiles of Switzerland
+\end{itemize}
 
-The scope of the study thesis was to create a repeatable workflow for generating vector tiles based on \osm{} data. The study thesis focus lied on solving the problem of creating a basemap and implementing Mapbox Streets v5 at small scale (\autoref{chapter_defining_mapbox_vector_tiles}) and delivered prerendered vector tile data for Switzerland as result.
+The scope of the study thesis was to create a repeatable workflow for generating vector tiles based on \osm{} data. The study thesis focus lied on solving the problem of creating a basemap and implementing Mapbox Streets v5 at small scale (\autoref{chapter_defining_mapbox_vector_tiles}) and delivered prerendered vector tile data for Switzerland as result.\\
 This workflow was intended to run on a single machine and was not meant to scale for rendering the entire planet (\autoref{chapter_scalable_rendering_process}) or keeping the vector tiles up to date (\autoref{chapter_scalable_rendering_process}).
+
 
 
 \section{Real World Usage Examples}\label{part1_examples}

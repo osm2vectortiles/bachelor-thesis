@@ -17,9 +17,9 @@ This section describes the main components which needed to be implemented in ord
 
 \clearpage
 
-\subsection{Import Mapping}
+\subsection{Import Mapping}\label{sub_import_mapping}
 
-Imposm3\cite{4_github_2015} is used to import the \osm{} data into the PostgreSQL database. Imposm3 expects a definition of which \osm{} tags should be mapped to which database tables. This import mapping definition satisfies the two purposes of filtering and mapping the data.
+Imposm3\cite{4_github_2015} is used to import the \osm{} data into the PostgreSQL database. Imposm3 satisfies the two purposes of filtering and mapping the \osm{} data.
 
 \paragraph{Filter data} The mapping allows to filter explicitly by tags and defines which data is imported. This is important since only a subset of all \osm{} data is included in the vector tiles and  therefore not all \osm{} data needs to be imported.
 
@@ -27,27 +27,25 @@ Imposm3\cite{4_github_2015} is used to import the \osm{} data into the PostgreSQ
 
 \vskip 0.2in
 
-The example definition in listing \autoref{definition_of_mapping} maps \osm{} tags with the key aeroway and one of the values runway, taxiway, apron or helipad to the table \textbf{aero\_polygon}. The \textbf{aero\_polygon} table has the columns id, geometry, timestamp and type. During the import process Imposm3 transformes the \osm{} nodes, ways and relations to one of the geometry types point, linestring or polygon. The mapping is one of the most important aspects of the project and maps more than 400 individual tags.
+The example definition in listing \autoref{definition_of_mapping} maps \osm{} tags with the key building and any value associated with that key into the table \textbf{building\_polygon}. The \textbf{building\_polygon} table has the columns id, geometry, underground, timestamp and type. The \textbf{underground} column in the database originates from the normalized value associated with the \osm{} key \textbf{building:levels:underground}.\\ During the import process Imposm3 transformes the \osm{} nodes, ways and relations to one of the geometry types point, linestring or polygon. The mapping is one of the most important aspects of the project and maps more than 400 individual tags.
 
 \begin{listing}[H]
 \begin{yamlcode}
-aero_polygon:
+building_polygon:
   type: polygon
   fields:
   - name: id
     type: id
   - name: geometry
     type: geometry
+  - name: underground
+    key: building:levels:underground
+    type: integer
   - name: timestamp
     type: pbf_timestamp
-  - name: type
-    type: mapping_value
   mapping:
-    aeroway:
-    - runway
-    - taxiway
-    - apron
-    - helipad
+    building:
+    - __any__
 \end{yamlcode}
 \caption{YAML definition of a single table in the import mapping}
 \label{definition_of_mapping}
@@ -65,9 +63,9 @@ After the import process all \osm{} data which is required for the vector tiles 
   \label{zoom_level_view_building_layer}
 \end{figure}
 
-\autoref{zoom_level_view_building_layer} shows on the left side the building layer on zoom level 13 and on the right side the same layer on zoom level 14. On zoom level 13 only a subset of the data, shown on zoom level 14, is visible. This example exactly shows the use of the zoom level views. 
+\autoref{zoom_level_view_building_layer} shows on the left side the building layer on zoom level 13 and on the right side the same layer on zoom level 14. On zoom level 13 only a subset of the data shown on zoom level 14 is visible, a very classic example of using zoom level views to provide more details on higher zoom levels.
 \\
-Listing \autoref{definition_of_zoom_level_view} shows the definition of the SQL views on both zoom levels. The \textbf{WHERE} clause in the query of the view \textbf{building\_z13} filters the rows to buildings which have an area greater than 1700. That is the reason why less buildings are shown in right side of \autoref{zoom_level_view_building_layer}.
+Listing \autoref{definition_of_zoom_level_view} shows the definition of the SQL views on both zoom levels. The \textbf{WHERE} clause in the query of the view \textbf{building\_z13} filters the rows to buildings which have an area greater than 1700. That is the reason why less buildings are shown on right side of \autoref{zoom_level_view_building_layer}.
 
 \begin{listing}[H]
 \begin{sqlcode}
@@ -88,7 +86,7 @@ Additionally zoom level views help to decouple the database tables which hold th
 
 \subsection{Layer Definition}
 
-The source project contains the definition of the layers inside the vector tiles. The definition contains metadata to access the database and a query which returns the necessary data for this layer. The listing \autoref{definition_of_layer} shows the definition of the layer \textbf{aeroway}. The query does not directly access the database table \textbf{aero\_polygon}. Instead it queries the zoom level views \textbf{aeroway\_z9} and \textbf{aeroway\_z10to14}.
+The source project contains the definition of the layers inside the vector tiles. The definition contains metadata to access the database and a query which returns the necessary data for this layer. The listing \autoref{definition_of_layer} shows the definition of the layer \textbf{building}. The query does not directly access the database table \textbf{building\_polygon}. Instead it queries the zoom level views \textbf{building\_z13} and \textbf{building\_z14}.
 
 \begin{listing}[H]
 \begin{yamlcode}
@@ -97,14 +95,15 @@ The source project contains the definition of the layers inside the vector tiles
       type: postgis
       table: |-
         (
-          SELECT osm_ids2mbid(osm_id, is_polygon(geometry)) AS osm_id, geometry, type
+          SELECT osm_ids2mbid(osm_id, is_polygon(geometry)) AS osm_id,
+                 geometry, building_is_underground(underground) AS underground 
           FROM (
-            SELECT * FROM aeroway_z9
-            WHERE z(!scale_denominator!) = 9
+            SELECT * FROM building_z13
+            WHERE z(!scale_denominator!) = 13
             UNION ALL
-            SELECT * FROM aeroway_z10to14
-            WHERE z(!scale_denominator!) BETWEEN 10 AND 14
-          ) AS aeroway WHERE geometry && !bbox!
+            SELECT * FROM building_z14
+            WHERE z(!scale_denominator!) = 14
+          ) AS building WHERE geometry && !bbox!
         ) AS data
     properties: 
       "buffer-size": 4
@@ -113,8 +112,8 @@ The source project contains the definition of the layers inside the vector tiles
 \label{definition_of_layer}
 \end{listing}
 
-This layer definition serves as input to the vector tile renderer (Mapnik). The tile renderer will execute every layer query for each tile and replaces expressions like \textbf{!scale\_denominator!} (zoom level) and \textbf{!bbox!} (extent of the tile) with the values of the current tile. If the query in listing \autoref{definition_of_layer} is executed for a tile on zoom level 8 it won't return any data as the \textbf{WHERE} clause will not match in both cases.
-Whereas if it is executed on a tile on zoom level 9 all data of the zoom level view aeroway\_z9 will be included in the layer aeroway.
+The layer definition serves as input to the vector tile renderer (Mapnik). The tile renderer will execute every layer query for each tile and replaces expressions like \textbf{!scale\_denominator!} (zoom level) and \textbf{!bbox!} (extent of the tile) with the values of the current tile. If the query in listing \autoref{definition_of_layer} is executed for a tile on zoom level 12 it won't return any data as the \textbf{WHERE} clause will not match in both cases.
+Whereas if it is executed on a tile on zoom level 13 all data of the zoom level view building\_z13 will be included in the layer building.
 
 \begin{figure}[H]
 \centering
@@ -142,24 +141,31 @@ During the development process of the map a number of problems were discovered a
 The purpose of the zoom level views is to filter the data to only contain rows that are shown on a specific zoom level. Expensive calculations or transformations should be avoided in these views or made in a preprocessing step.\\
 
 For example there are multiple label layers which transform a polygon geometry to a point geometry and since calculating the centroid from a polygon is expensive, transformations like these result in bad rendering performance.\\
-The reason for this is that every time the layer query gets executed, all rows of the view get transformed even though only a subset of the data is needed for the rendered tile. Therefore selecting the right rows and only executing the transformation on this subset results in much better performance.
-
-
+The reason for this is that every time the layer query gets executed, all rows of the view get transformed even though only a subset of the data is needed for the rendered tile (\autoref{point_calculation_zoom_level_view}). Therefore selecting the right rows and only executing the transformation on the smallest possible subset results in much better performance (\autoref{point_calculation_layer_definition}).
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\textwidth]{images/expensive_functions}
-\caption{Move expensive function from zoom level view to layer definition}
+\includegraphics[width=0.7\textwidth]{images/transformation_layer_definition}
+\caption{Point calculation in zoom level view}
+\label{point_calculation_zoom_level_view}
 \end{figure}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{images/transformation_zoom_level_views}
+\caption{Point calculation in layer definition}
+\label{point_calculation_layer_definition}
+\end{figure}
 
-\subsection{Helper functions}
+\subsection{Classification Functions}
 
-Small helper functions were created to make the queries more readable and secondly to reuse common logic through multiple queries.\\ 
-Mapbox has introduced a complex classification schema to be able to filter features of a single layer. For example the layer landuse contains features of class park, school, cemetery and many more. This allows people to style these areas differently. OpenStreetMap has an entirely different data model. Therefore a helper function was created to assign the right class value to each row.
+\osm{} contains a complex taxonomy of tags mapping to real-world objects. The tags are structured into layers but cartographers need another level of abstraction to style groups of features. For example designers want to set the color of all parks to green instead of styling tags such as dog parks, gardens and playground individually.
+Therefore closely related tags are grouped together and are stored in the \textbf{class} field. This process is called classification and is essentially a mapping of many tag values to a single value.
+\\\\
+These classifications cover more than 400 individual tags grouped into more than 100 groups and are implemented by SQL functions as in listing \autoref{definition_of_classification_helper_function}. These class definitions are written in a YAML based format from which the SQL classification functions are generated.
 
 \begin{listing}[H]
-\begin{sqlcode}
+\begin{plpgsqlcode}
 CREATE OR REPLACE FUNCTION landuse_class(type VARCHAR) RETURNS VARCHAR
 AS $$
 BEGIN
@@ -170,7 +176,7 @@ BEGIN
     END;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
-\end{sqlcode}
+\end{plpgsqlcode}
 \caption{Definition of classification helper function}
 \label{definition_of_classification_helper_function}
 \end{listing}
@@ -203,7 +209,7 @@ relation & polygon + polygon label points & (id x 10) + 4    \\
 \subsection{Place Label Rank Calculation}\label{place_label_rank_calc}
 
 Ranks are important for determining at which zoom level which places should be displayed. The NaturalEarth database contains places with scaleranks assigned by humans and is the most important source for better quality labels (historic places might be much more important despite having a very small population). This dataset is merged with the imported \osm{} data.
-They can also be used to limit density at lower zoom levels to decrease data density.
+They can also be used to limit density at lower zoom levels to decrease data density. Using the scalerank and other information such as place type and population the actual rank called \textbf{localrank} is calculated. An example of localrank calculation can be seen in figure \autoref{localrank_calculation} (localrank is denoted as number inside circle).
 
 \subsubsection*{Algorithm}
 
@@ -218,7 +224,7 @@ They can also be used to limit density at lower zoom levels to decrease data den
             \item By type city, town, village, hamlet, suburb, neighbourhood
             \item By population descending
         \end{enumerate}
-        \item Assign row number as \texttt{localrank}
+        \item Use the row number of the sorted labels as \textbf{localrank} for each feature
     \end{enumerate}
 \end{minipage}
 \hfill
@@ -227,6 +233,7 @@ They can also be used to limit density at lower zoom levels to decrease data den
     \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{images/rank_calculation.png}
-    \caption{Local place rank calculation}
+    \caption{Localrank calculation}
+    \label{localrank_calculation}
     \end{figure}
 \end{minipage}

@@ -21,7 +21,7 @@ Instead of delivering a image of the map to a client like a browser or mobile ph
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    The Mapbox Vector Tile Specification defines how to encode tiled vector data using Protobuf. More details about the encoding and internal structure of vector tiles can be found in the specification\cite{104_mapbox.com_2016}.\\
+    The Mapbox Vector Tile Specification defines how to encode tiled vector data using Protocol Buffers\cite{protobuf_2016}. More details about the encoding and internal structure of vector tiles can be found in the specification\cite{104_mapbox.com_2016}.\\
     
     The data inside of vector tiles is structured into layers and features. A vector tile can have multiple layers such as roads, landuse or water (elaborated in \autoref{database-schema}). Each layer consist of one or multiple features. A feature contains a geometry field (either of type point, linestring or polygon) and metadata such as label translations.
 \end{minipage}
@@ -63,9 +63,13 @@ Instead of delivering a image of the map to a client like a browser or mobile ph
 The data model of \osm{} consists of objects of type node, way and relation. Nodes define points in space, ways define linear features and relations define how objects relate to each other\cite{1_osm_wiki_2016}.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{images/osm_data_model}
-\caption{Example of object tagged with natural=wood}
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/osm_data_model}
+    \caption{Example of object tagged natural=wood}
+    \label{landuse_on_osm_editor}
 \end{figure}
 
-Every object can have one or more tags associated with it. Tags define the meaning of a certain object. A tag consists of a key/value pair for example the tag \textbf{natural=wood} is used to define areas which are covered in trees. OSM tags are not strictly defined and users can add their own tags but there are many conventions which should be followed.
+Every object can have one or more tags associated with it. Tags define the meaning of a certain object. A tag consists of a key/value pair for example the tag \textbf{natural=wood} is used to define areas which are covered in trees. \osm{} tags are not strictly defined and users can add their own tags but there are many conventions which should be followed.\\
+
+The semi-structured \osm{} data model is transformed a structured database schema as explained in \autoref{sub_import_mapping}. Nodes, ways and relations are converted into real geometries.
+A way for example is turned into a polygon because it is a closed way where the first and last node are shared\cite{13_osm_wiki_closed_way}.
