@@ -20,7 +20,7 @@ Figuring out which tiles are affected by updates requires a multi-step process.
 
 \paragraph{Time Constraint} In order to be able to keep up with rendering changes the update process can not take longer than the number of days the database is behind.
 
-\section{OSM Diff File}
+\section{OpenStreetMap Diff File}
 
 \osm{} provides a single XML file, which contains every mapped object. Since the process of importing is time and resource consuming it is not feasible to redo this process to keep up with all the changes. 
 \\
@@ -141,7 +141,7 @@ $$ language plpgsql;
   \label{delete_trigger}
 \end{listing}
 
-As a result each table has an additional delete tables which contains all deleted and modified rows. This allows in a second step to calculate the affected tiles and rerender them.
+As a result each table has an additional delete table which contains all deleted and modified rows. This allows in a second step to calculate the affected tiles and rerender them.
 
 %----------------------------
 \section{Calculate changed tiles}\label{calculate-changed-tiles}
@@ -224,7 +224,7 @@ The algorithm defined in \autoref{calculate-changed-tiles} is applied over all g
   \caption{Calculate all tiles containing building polygons that changed in the last 7 days}
 \end{listing}
 
-\autoref{changed_tiles_on_z10} shows the changed tiles on zoom level 10 over the course of 10 days. A number of interesting descoverys were made:
+\autoref{changed_tiles_on_z10} shows the changed tiles on zoom level 10 over the course of 10 days. A number of interesting discoveries were made.
 
 \begin{figure}[H]
   \centering
@@ -252,4 +252,4 @@ There are a lot of areas like Canada, Alaska, Russia, South America and Australi
 
 \paragraph{Hypothesis}
 
-It turns out that the unique changed tiles of 20 days is ~ 20 million tiles while unique changed tiles of 10 days has ~18 million tiles. This leads to the hypothesis that less tiles change often.
+It turns out that the unique changed tiles of 20 days is \textasciitilde 20 million tiles while unique changed tiles of 10 days has \textasciitilde 18 million tiles. This leads to the hypothesis that less tiles change often.

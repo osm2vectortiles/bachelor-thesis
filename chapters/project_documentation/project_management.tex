@@ -15,16 +15,26 @@ GitHub was used for planning and tracking of the tasks and milestones.
 To provide a SCRUM board and burndown chart the ZenHub browser plugin has been used.
 
 
-It has a big advantage over other project management tools, as the revision control and the issue tracking is at the same place.
-Non project members can understand the thoughts behind certain decisions and communicate their ideas directly to team members which is important for an Open Source project.\\
+It has a big advantage over other project management tools, as revision control and issue tracking are at the same place.
+Non project members can understand the thoughts behind certain decisions and communicate their ideas directly to team members which is important for an open source project.\\
 
 An organization named osm2vectortiles has been created with the following repositories:
 
 \begin{itemize}
 \item
-  \textbf{osm2vectortiles} contains the project
+  \textbf{osm2vectortiles} Contains the dsitributed workflow to create vector tiles
+\item
+  \textbf{tileserver-gl-light} A trimmed down fork of tileserver-gl for serving MBTiles and predefined Mapbox GL styles with emphasis on serving vector tiles from \osmvt{}
 \item
   \textbf{imposm3} Custom fork of imposm3 to support timestamp field
+\item
+  \textbf{mapbox-gl-styles} Collection of Mapbox GL styles that are compatible with \osmvt{}.
+\item
+  \textbf{rabbitmq} Custom fork of official RabbitMQ Docker image with additional support for message timeout configuration
+\item
+  \textbf{bachelor-thesis} LaTeX source for bachelor thesis
+\item
+  \textbf{study-thesis} LaTeX source for preceding study thesis
 \end{itemize}
 
 \section{Schedule}
@@ -59,7 +69,7 @@ Each milestones marks a special release version of the vector tiles.
     \begin{tabular}{p{3cm} p{9.5cm}}
 Prof Stefan Keller & Thesis advisor responsible for supervising work and
 assess the thesis.\\ \hline
-Dr Petr Pridal &
+Petr Pridal, PhD &
 Technical partner responsible for providing infrastructure \\ \hline
 Manuel Roth &
 Maintainer\\ \hline

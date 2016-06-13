@@ -63,7 +63,7 @@ After the import process all \osm{} data which is required for the vector tiles 
   \label{zoom_level_view_building_layer}
 \end{figure}
 
-\autoref{zoom_level_view_building_layer} shows on the left side the building layer on zoom level 13 and on the right side the same layer on zoom level 14. On zoom level 13 only a subset of the data shown on zoom level 14 is visible, a very classic example of using zoom level views to provide more details on higher zoom levels.
+\autoref{zoom_level_view_building_layer} shows on the left side the building layer on zoom level 13 and on the right side the same layer on zoom level 14. On zoom level 13 only a subset of the data shown on zoom level 14 is visible. This is a classic example of using zoom level views to provide more details on higher zoom levels.
 \\
 Listing \autoref{definition_of_zoom_level_view} shows the definition of the SQL views on both zoom levels. The \textbf{WHERE} clause in the query of the view \textbf{building\_z13} filters the rows to buildings which have an area greater than 1700. That is the reason why less buildings are shown on right side of \autoref{zoom_level_view_building_layer}.
 
@@ -82,7 +82,7 @@ CREATE OR REPLACE VIEW building_z14 AS
 \label{definition_of_zoom_level_view}
 \end{listing}
 
-Additionally zoom level views help to decouple the database tables which hold the actual data and the definition of the layer. This is very helpful for example if new data is added to a layer, as only the import mapping and the zoom level view needs to be modified.
+Additionally zoom level views help to decouple the database tables which hold the actual data and the definition of the layer. This is very helpful for example if new data is added to a layer, as only the import mapping and the zoom level views need to be modified.
 
 \subsection{Layer Definition}
 
@@ -146,15 +146,15 @@ The reason for this is that every time the layer query gets executed, all rows o
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{images/transformation_layer_definition}
-\caption{Point calculation in zoom level view}
-\label{point_calculation_zoom_level_view}
+\caption{Point calculation in layer definition}
+\label{point_calculation_layer_definition}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{images/transformation_zoom_level_views}
-\caption{Point calculation in layer definition}
-\label{point_calculation_layer_definition}
+\caption{Point calculation in zoom level view}
+\label{point_calculation_zoom_level_view}
 \end{figure}
 
 \subsection{Classification Functions}
@@ -181,7 +181,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 \label{definition_of_classification_helper_function}
 \end{listing}
 
-The listing \autoref{definition_of_classification_helper_function} shows the simplified class function of the layer landuse it takes the type value as input and returns the correct class value. 
+The listing \autoref{definition_of_classification_helper_function} shows the simplified class function of the layer landuse. It takes the type value as input and returns the correct class value. 
 
 \subsection{OpenStreetMap ID Transformation}
 

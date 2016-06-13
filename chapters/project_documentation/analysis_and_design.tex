@@ -139,7 +139,7 @@ The \textbf{merge-jobs} component is responsible for taking result messages from
 
 In this section the different layers and the database schema related to it are explained and justified. Each layer contains a diagram showing the relations and model between tables, zoom level views (\autoref{zoom_level_views}) and the vector tile layers (\autoref{layer_diagram_notation}).
 The database schema is denormalized and has no relations to fulfill the performance constraints of rendering.
-It is heavily optimized for fast reads since the only use case of the database schema is generating vector tiles from the PostGIS database.
+It is heavily optimized for fast reads since the only use case of the database schema is generating vector tiles from the PostGIS database. The arrow in \autoref{layer_diagram_notation} represents the data flow.
 
 
 \begin{figure}[H]
@@ -178,7 +178,7 @@ It is heavily optimized for fast reads since the only use case of the database s
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
     The \textbf{water} layer contains bodies of water like the ocean, lakes or large rivers.
-    Since water is essential to the quality of the map different data sources as shown in \autoref{water_data_sources_table} are used on different zoom levels. 
+    Since water is essential to the quality of the map, different data sources as shown in \autoref{water_data_sources_table} are used on different zoom levels. 
     The \textbf{water\_label} layer shows the labels of lake bodies (not marine waters). Due to the costly calculation of centroid of very large polygons the \textbf{water\_point} table is precalculated ahead of rendering time.
     \\\\
     Coastlines in \osm{} are sensitive for change and
@@ -358,7 +358,7 @@ It is heavily optimized for fast reads since the only use case of the database s
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
     The placement and importance of labels of countries, states and seas matters\cite{12_axismaps.github.io_2015} and is important to get right. 
-    Because it is difficult to ensure the quality of these features when importing directly from \osm{}, the labels of countries and states are curated by hand.
+    Because it is difficult to ensure the quality of these features when importing directly from \osm{}, the labels of countries and states are curated by hand.\\
     Data from the Overpass API \cite{13_wiki.openstreetmap.org_2015} is converted into GeoJSON and manually edited and enhanced with a label rank to get the best possible label placement and importance ranking.
     This effort is worth it because country and state data changes
     at infrequent intervals.
@@ -410,7 +410,7 @@ It is heavily optimized for fast reads since the only use case of the database s
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
-    The layer \textbf{aeroway} contains infrastructure regarding air travel. The most common features are airports and their aprons, runways and taxiways. Airports are big landmarks and therefore all features are already present after zoom level 10. The layer consists of polygons and linestrings because runways are often polygons, while taxiways are mostly linestrings.
+    The layer \textbf{aeroway} contains infrastructure regarding air travel. The most common features are airports and their aprons, runways and taxiways. Airports are big landmarks and therefore all features are already present after zoom level 10. The layer consists of polygons and linestrings because runways are often polygons, while taxiways are mostly linestrings.\\
     The layer \textbf{airport\_label} contains labels of airports (either a point or the centroid of the airport polygon) since airports are important orientation points. The \textbf{scalerank} field describes the importance of the airport based on the covered area and type.
     Airports usually have official abbreviations (either the IATA, FAA, ICAO or custom reference code) that are stored in the \textbf{ref} field.
 \end{minipage}

@@ -4,11 +4,11 @@ In order to ensure proper quality a number of measurements were taken. The follo
 
 \section{Testing}\label{testing}
 
-OSM2VectorTiles consists of many different components that all work together which makes testing quite challenging. This section describes how testing was approached in this project.
+\osmvt{} consists of many different components in different languages that all work together which makes testing quite challenging. This section describes how testing was approached in this project.
 
 \subsection{Mapping Report Tool}
 
-The Mapping Report tool was created to verify that all imported \osm{} data is used inside the vector tiles. This helped to identify \osm{} key/value pairs which should be removed from the import mapping because they are not used inside the vector tiles.
+The mapping report tool was created to verify that all imported \osm{} data is used inside the vector tiles. This helped to identify \osm{} key/value pairs which should be removed from the import mapping because they are not used inside the vector tiles.
 
 \begin{table}[H]
 \centering
@@ -34,7 +34,7 @@ osm\_water\_polygon    & water (label)         & 10496       & 10496            
 \label{mapping_report_tool}
 \end{table}
 
-\autoref{mapping_report_tool} shows an example output of the Mapping Report Tool. It lists the number of rows per table and compares them with the number of rows used in a certain layer. If the percentage value is below 100 percent, the layer does not use all the features specified in the import mapping. Therefore these \osm{} key/value pairs should be removed.
+\autoref{mapping_report_tool} shows an example output of the mapping report tool. It lists the number of rows per table and compares them with the number of rows used in a certain layer. If the percentage value is below 100 percent, the layer does not use all the features specified in the import mapping. Therefore these \osm{} key/value pairs should be removed.
 
 \subsection{Integration Test}
 

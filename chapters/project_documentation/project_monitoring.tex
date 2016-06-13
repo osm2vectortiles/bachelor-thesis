@@ -1,79 +1,103 @@
 \chapter{Project Monitoring}\label{project monitoring}
 
 \section{Code Statistics}
-
-\autoref{lines_of_code} shows how many lines of code were written in which language. A lot of SQL code is generated during the import-sql process. This code uses YAML definitions to generate the SQL functions and tables. 
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lr}
-\textbf{Language}   & \multicolumn{1}{l}{\textbf{Lines of Code}} \\ \hline
-SQL                     & 1155                              \\
-Bash                    & 836                               \\
-Python                  & 728                               \\
-Javascript              & 209                               \\
-Dockerfile              & 201                               \\
-YAML                    & 3275                              \\
-\noindent\hspace*{8mm}%
-Vector Tile Definition  & 1160                              \\
-\noindent\hspace*{8mm}%
-SQL Classifications Definition        & 1928                              \\
-\noindent\hspace*{8mm}%
-Docker Compose File     & 169                               \\
-\noindent\hspace*{8mm}%
-Other                   & 18
-\end{tabular}
-\caption{Lines of Code per language}
-\label{lines_of_code}
-\end{table}
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    \autoref{lines_of_code} shows how many lines of code were written in which language. A lot of SQL code is generated during the \textbf{import-sql} process. Most of the YAML definitions are used as input to generate SQL functions resulting in a much higher LOC count for generated code.
+    
+    Most of the logic is written in SQL with Python programs used for the distributed workers and generating SQL code. Since the ETL process requires a lot of programs to work together there is also a significant portion of small Bash scripts used as start scripts inside the Docker containers.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-18pt}
+    \begin{table}[H]
+    \centering
+        \scalebox{0.9}{
+            \begin{tabular}{lr}
+            \textbf{Language}   & \multicolumn{1}{l}{\textbf{LOC}} \\ \hline
+            SQL                     & 1155                              \\
+            Bash                    & 836                               \\
+            Python                  & 728                               \\
+            Javascript              & 209                               \\
+            Dockerfile              & 201                               \\
+            YAML                    &                                   \\
+            \noindent\hspace*{8mm}%
+            Vector Tile Definition  & 1160                              \\
+            \noindent\hspace*{8mm}%
+            SQL Classifications Definition        & 1928                \\
+            \noindent\hspace*{8mm}%
+            Docker Compose File     & 169                               \\
+            \noindent\hspace*{8mm}%
+            Other                   & 18                                \\\hline
+            \textbf{Total}          & 6404                 
+            
+            \end{tabular}
+        }
+    \caption{Lines of code (LOC) per language}
+    \label{lines_of_code}
+    \end{table}
+\end{minipage}
 
 \section{Estimated Time vs Actual Time}
-
-The estimations are based on the required work hours per week (20 hours per person) multiplied by the amount of weeks that are planned for a certain sprint.
-
-\begin{table}[H]
-\centering
-    \begin{tabular}{lll}
-    \textbf{Sprint}        & \textbf{Estimated} & \textbf{Actual} \\
-     \hline
-    v1.1    & 80     & 87        \\
-    v1.2    & 80     & 99        \\
-    v1.3    & 80     & 98        \\
-    v1.4    & 100    & 121       \\
-    v1.4.1  & 40     & 53       \\
-    v1.4.2  & 40     & 52       \\
-    v1.5    & 100    & 126       \\
-    v2.0    & 80     & 87        \\
-    v2.1    & 80     & 89        \\
-    \hline
-    \textbf{Total} & 720 & 812   \\
-    \end{tabular}
-    \caption{Estimated vs actual time for different sprints}
-    \label{extimated_vs_actual_time}
-\end{table}
-
-\autoref{extimated_vs_actual_time} shows that every sprint took longer than planned. This has many reasons sometimes urgent issues had to be resolved in the same sprint or some task just took longer than expected.
+\noindent\begin{minipage}[t]{0.62\linewidth}
+    \vspace{0pt}
+    The estimations are based on the required work hours per week (20 hours per person) multiplied by the amount of weeks that are planned for a certain sprint.\\\\ \autoref{extimated_vs_actual_time} shows that every sprint took longer than planned. This has many reasons sometimes urgent issues had to be resolved in the same sprint or some task just took longer than expected. The issue management and communication with the community also turned out to be a very time intensive task.
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.34\linewidth}
+    \vspace{-18pt}
+    \begin{table}[H]
+    \centering
+        \scalebox{0.9}{
+        \begin{tabular}{lll}
+        \textbf{Sprint}        & \textbf{Estimated} & \textbf{Actual} \\
+         \hline
+        v1.1    & 80     & 87        \\
+        v1.2    & 80     & 99        \\
+        v1.3    & 80     & 98        \\
+        v1.4    & 100    & 121       \\
+        v1.4.1  & 40     & 53       \\
+        v1.4.2  & 40     & 52       \\
+        v1.5    & 100    & 126       \\
+        v2.0    & 80     & 87        \\
+        v2.1    & 80     & 89        \\
+        \hline
+        \textbf{Total} & 720 & 812   \\
+        \end{tabular}
+        }
+        \caption{Estimated vs actual time for different sprints}
+        \label{extimated_vs_actual_time}
+    \end{table}
+\end{minipage}
 
 \section{Time per Person}
-
-The invested time per person was very balanced. This was thanks to the agreement that both contributors met three times a week in school to work together on the project. 
-
-\begin{table}[H]
-\centering
-    \begin{tabular}{llll}
-    \textbf{Sprint}  & \textbf{Lukas Martinelli} & \textbf{Manuel Roth} & \textbf{Total} \\
-    \hline
-    v1.1    & 43               & 44          & 87    \\
-    v1.2    & 47               & 52          & 99    \\
-    v1.3    & 50               & 48          & 98    \\
-    v1.4    & 62               & 59          & 121   \\
-    v1.4.1  & 28               & 25          & 53   \\
-    v1.4.2  & 26               & 26          & 52   \\
-    v1.5    & 62               & 64          & 126   \\
-    v2.0    & 43               & 44          & 87    \\
-    v2.1    & 46               & 43          & 89    \\
-    \hline
-    \textbf{Total}          & 407              & 405         & 812   \\
-    \end{tabular}
-    \caption{Time for each contributor for sprints}
-\end{table}
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}
+    The invested time per person was very balanced. This was thanks to the agreement that both contributors meet three times a week in school to work together on the project. 
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \vspace{-18pt}
+    \begin{table}[H]
+    \centering
+        \scalebox{0.9}{
+            \begin{tabular}{llll}
+            \textbf{Sprint}  & \textbf{Lukas Martinelli} & \textbf{Manuel Roth} & \textbf{Total} \\
+            \hline
+            v1.1    & 43               & 44          & 87    \\
+            v1.2    & 47               & 52          & 99    \\
+            v1.3    & 50               & 48          & 98    \\
+            v1.4    & 62               & 59          & 121   \\
+            v1.4.1  & 28               & 25          & 53   \\
+            v1.4.2  & 26               & 26          & 52   \\
+            v1.5    & 62               & 64          & 126   \\
+            v2.0    & 43               & 44          & 87    \\
+            v2.1    & 46               & 43          & 89    \\
+            \hline
+            \textbf{Total}          & 407              & 405         & 812   \\
+            \end{tabular}
+        }
+        \caption{Time for each contributor for each sprint}
+        \label{time_per_contributork}
+    \end{table}
+\end{minipage}

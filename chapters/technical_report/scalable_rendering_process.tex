@@ -66,6 +66,7 @@ To divide the work of rendering the planet into equal parts across the world, th
 \subsection{List Job}\label{list-job}
 
 \noindent\begin{minipage}[t]{0.68\linewidth}
+    \vspace{0pt}
     It is important to be able to update distinct tiles to fix bugs later on or rerender all changed geometries. A list job is a batch job of tiles grouped together by their proximity and is created from a large list of tiles.\\
     
     Each week a list of changed tile indizes is produced by the changed tiles detection ($20\,000\,000$ to $30\,000\,000$ tiles). This list must be split into batch jobs where each job contains several thousand tiles that need to be rendered. Since PostgreSQL has been configured to cluster rows together by the tile index of the geometry column it is possible to gain additional performance by grouping the tiles that are close to each other into a batch job.
