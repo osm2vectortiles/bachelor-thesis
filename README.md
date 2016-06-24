@@ -1,6 +1,6 @@
 ## Bachelor Thesis
 
-This repository contains the bachelor thesis of OSM2VectorTiles. [PDF Build](https://cdn.rawgit.com/osm2vectortiles/bachelor-thesis/master/thesis.pdf)
+This repository contains the bachelor thesis of OSM2VectorTiles. [PDF Build](https://cdn.rawgit.com/osm2vectortiles/bachelor-thesis/882a46977f7b984fc59be188335127d62921c44c/thesis.pdf)
 
 ### License / Credits
 
