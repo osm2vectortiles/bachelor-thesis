@@ -1,6 +1,6 @@
 ## Bachelor Thesis
 
-This repository contains the bachelor thesis of osm2vectortiles. [PDF Build](https://www.sharelatex.com/project/56cc1d3d63b23d6c0a2c7776/output/output.pdf)
+This repository contains the bachelor thesis of OSM2VectorTiles. [PDF Build](https://cdn.rawgit.com/osm2vectortiles/bachelor-thesis/master/thesis.pdf)
 
 ### License / Credits
 
